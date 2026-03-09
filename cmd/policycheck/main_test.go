@@ -17,21 +17,26 @@ type testCase struct {
 }
 
 func TestPolicies(t *testing.T) {
-	ps, err := loadPolicies("../../policies")
-	if err != nil {
-		t.Fatalf("failed to load policies: %v", err)
-	}
-
+	ps := cedar.NewPolicySet()
 	var testFiles []string
-	filepath.Walk("../../policies", func(path string, info os.FileInfo, err error) error {
+	for _, dir := range []string{"../../policies", "../../examples"} {
+		dirPS, err := loadPolicies(dir)
 		if err != nil {
-			return err
+			t.Fatalf("failed to load policies from %s: %v", dir, err)
 		}
-		if !info.IsDir() && filepath.Ext(path) == ".json" {
-			testFiles = append(testFiles, path)
+		for id, p := range dirPS.All() {
+			ps.Add(id, p)
 		}
-		return nil
-	})
+		filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if !info.IsDir() && filepath.Ext(path) == ".json" {
+				testFiles = append(testFiles, path)
+			}
+			return nil
+		})
+	}
 	if len(testFiles) == 0 {
 		t.Fatal("no test files found")
 	}

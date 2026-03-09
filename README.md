@@ -1,5 +1,7 @@
 # cedar-policies
 
+[![test](https://github.com/ipapast/cedar-policies/actions/workflows/test.yml/badge.svg)](https://github.com/ipapast/cedar-policies/actions/workflows/test.yml)
+
 Cedar policy engine for AI coding agents - testable, named security rules for tool-use guardrails.
 
 Built on [Cedar](https://docs.cedarpolicy.com/), AWS's open-source policy language.
@@ -21,14 +23,17 @@ The input is a JSON object with `tool_name` and `tool_input` fields. Any agent f
 Requires Go 1.24+.
 
 ```bash
-go install ./cmd/policycheck
+go install github.com/ipapast/cedar-policies/cmd/policycheck@latest
+git clone https://github.com/ipapast/cedar-policies.git
 ```
 
-This installs `policycheck` to `~/go/bin/`. Make sure it's on your PATH:
+`go install` puts `policycheck` in `~/go/bin/`. Make sure it's on your PATH:
 
 ```bash
 export PATH=$PATH:$(go env GOPATH)/bin
 ```
+
+The binary does not embed the policies, so you need the clone too. Point the hook at its `policies/` directory.
 
 ### Claude Code
 
@@ -52,6 +57,8 @@ Add to your project's `.claude/settings.json`:
 }
 ```
 
+Use an absolute path to the `policies/` directory in your clone. If the binary can't load the policies or can't parse its input, it exits 2 and blocks the tool call (fail closed), so a wrong path shows up immediately instead of silently disabling the guardrails.
+
 ### Other agents
 
 Pipe tool calls as JSON to stdin before execution:
@@ -73,6 +80,40 @@ Cedar is a policy language by AWS. Every request has a **principal** (who), **ac
 Our `base.cedar` permits everything by default. Individual policy files add `forbid` rules that override.
 
 For the full language reference, see the [Cedar docs](https://docs.cedarpolicy.com/).
+
+## Included policies
+
+| ID | Blocks |
+|---|---|
+| `CMD-001` | rm -r/-rf on dangerous paths (/, ~, *) |
+| `CMD-002` | find -delete on dangerous paths (rm -rf bypass) |
+| `CMD-003` | sudo/su/doas privilege escalation |
+| `CMD-004` | chmod 777 and recursive chown |
+| `CMD-005` | privileged Docker containers |
+| `CMD-006` | kill -9 |
+| `CMD-007` | disk-level commands (dd, mkfs, fdisk, parted) |
+| `DATA-001` | environment variable dumping |
+| `DATA-002` | reading credential and cloud config files |
+| `DATA-003` | reading .env files |
+| `DATA-004` | writing to shell config and dotfiles |
+| `DATA-005` | reading system authentication files |
+| `NET-001` | piping downloads to shell execution |
+| `NET-002` | data exfiltration via curl/wget POST |
+| `NET-003` | accessing cloud metadata endpoints (SSRF risk) |
+| `TOOL-001` | git force push |
+| `TOOL-002` | modifying git remotes |
+| `TOOL-003` | destructive git operations |
+| `TOOL-004` | package publishing |
+| `TOOL-005` | writing to CI/CD workflows |
+| `TOOL-006` | editing agent settings and security files |
+| `TOOL-007` | sending Slack messages via MCP |
+| `TOOL-009` | pushing directly to main or master |
+| `TOOL-010` | aws iam permission changes |
+| `TOOL-011` | aws s3 mass deletion |
+| `TOOL-012` | cdk deploy/destroy |
+| `TOOL-013` | destructive psql commands (DROP, TRUNCATE) |
+
+Policies in `examples/` are not loaded by default. They need a tweak for your setup (for example `TOOL-008` restricts `git push` to one GitHub account, so set your own username and copy it into `policies/`).
 
 ## Writing policies
 
@@ -101,6 +142,10 @@ forbid (
 
 Numbers are sequential within each prefix: `CMD-001`, `CMD-002`, `NET-001`, etc.
 
+## Limitations
+
+This is a guardrail, not a sandbox. Rules are glob matches on the raw command string or file path, so they are easy to get around: `rm  -rf /` (two spaces) or `cat ~/.ssh/id_rsa` through Bash will not match rules written for the exact forms, and the DATA rules mostly cover the Read tool, not shell access. Named git remotes are not resolved. Treat the policies as a safety net for mistakes and obvious bad behavior, and use real isolation for anything critical. See [SECURITY.md](SECURITY.md).
+
 ## Testing policies
 
 ```bash
@@ -121,6 +166,22 @@ The hook input is mapped to Cedar context:
 | `context.file_path` | `tool_input.file_path` (Read/Write/Edit) | `"~/.ssh/id_rsa"` |
 
 Action is the tool name: `Action::"Bash"`, `Action::"Read"`, `Action::"Write"`, `Action::"mcp__slack__slack_post_message"`, etc.
+
+Every policy ships with a `*_test.json` file next to it listing tool calls and whether they should be blocked or allowed. Run them all with:
+
+```bash
+go test ./...
+```
+
+## Contributing
+
+Add a failing test case first, then the policy that makes it pass:
+
+1. Add cases to `policies/<area>/<ID>_test.json` (or create a new one) with `"expect": "block"` / `"allow"`.
+2. Run `go test ./...` and confirm the new cases fail.
+3. Write or update the `.cedar` file until they pass.
+
+[`.claude/skills/writing-cedar-policies/SKILL.md`](.claude/skills/writing-cedar-policies/SKILL.md) describes this workflow in more detail and is also usable as a Claude Code skill.
 
 ## Ignoring policies
 
@@ -176,12 +237,19 @@ cedar-policies/
   cmd/policycheck/
     main.go            # hook binary
     main_test.go       # test runner (loads *_test.json files)
+  examples/            # policies that need customizing before use
   policies/
     base.cedar         # default permit rules
     cmd/               # dangerous commands (rm, sudo, chmod, docker, kill)
     data/              # secrets, credentials, dotfiles
     net/               # network exfiltration
     tool/              # git, MCP, CI/CD, package publishing
+  SECURITY.md
+  LICENSE              # Apache-2.0
   go.mod
   go.sum
 ```
+
+## License
+
+Apache-2.0. See [LICENSE](LICENSE).

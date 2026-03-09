@@ -20,13 +20,13 @@
   {
     "name": "allows push to allowed GitHub account (HTTPS)",
     "tool_name": "Bash",
-    "tool_input": {"command": "git push https://github.com/ipapast/cedar-policies feature"},
+    "tool_input": {"command": "git push https://github.com/your-github-user/cedar-policies feature"},
     "expect": "allow"
   },
   {
     "name": "allows push to allowed GitHub account (SSH)",
     "tool_name": "Bash",
-    "tool_input": {"command": "git push git@github.com:ipapast/cedar-policies.git feature"},
+    "tool_input": {"command": "git push git@github.com:your-github-user/cedar-policies.git feature"},
     "expect": "allow"
   },
   {

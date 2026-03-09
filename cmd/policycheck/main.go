@@ -254,23 +254,25 @@ func cmdUnignore() {
 	fmt.Fprintf(os.Stderr, "Removed ignore for %s\n", policyID)
 }
 
+// Evaluation errors exit 2 (block): Claude Code treats any other non-zero
+// exit as a non-blocking error, which would silently disable the guardrails.
 func cmdEvaluate(policiesDir string) {
 	input, err := io.ReadAll(os.Stdin)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to read stdin: %v\n", err)
-		os.Exit(1)
+		os.Exit(2)
 	}
 
 	var hook hookInput
 	if err := json.Unmarshal(input, &hook); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to parse hook input: %v\n", err)
-		os.Exit(1)
+		os.Exit(2)
 	}
 
 	ps, err := loadPolicies(policiesDir)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to load policies: %v\n", err)
-		os.Exit(1)
+		os.Exit(2)
 	}
 
 	ignores, _ := loadIgnores() // ignore errors, just evaluate without ignores

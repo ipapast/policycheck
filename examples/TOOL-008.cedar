@@ -1,3 +1,5 @@
+// EXAMPLE: replace "your-github-user" below with your own account, then copy
+// this file (and its test file) into policies/ to enable it.
 // This catches git push with literal URLs only. It cannot resolve named
 // remotes like "origin" to their actual URL. For full coverage, pair this
 // with a PreToolUse hook that runs `git remote get-url` to check the
@@ -13,6 +15,6 @@ forbid (
     context.command like "git push *gitlab.com*" ||
     context.command like "git push *bitbucket.org*"
 } unless {
-    context.command like "*github.com/ipapast*" ||
-    context.command like "*github.com:ipapast*"
+    context.command like "*github.com/your-github-user*" ||
+    context.command like "*github.com:your-github-user*"
 };
