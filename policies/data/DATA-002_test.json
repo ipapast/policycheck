@@ -1,0 +1,26 @@
+[
+  {
+    "name": "blocks reading SSH keys",
+    "tool_name": "Read",
+    "tool_input": {"file_path": "/Users/me/.ssh/id_rsa"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks reading AWS credentials",
+    "tool_name": "Read",
+    "tool_input": {"file_path": "/Users/me/.aws/credentials"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks reading gcloud config",
+    "tool_name": "Read",
+    "tool_input": {"file_path": "/Users/me/.config/gcloud/application_default_credentials.json"},
+    "expect": "block"
+  },
+  {
+    "name": "allows reading normal files",
+    "tool_name": "Read",
+    "tool_input": {"file_path": "/Users/me/project/main.go"},
+    "expect": "allow"
+  }
+]

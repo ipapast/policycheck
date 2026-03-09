@@ -1,0 +1,26 @@
+[
+  {
+    "name": "blocks git push --force",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git push --force origin main"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks git push origin --force",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git push origin --force main"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks git push --force-with-lease",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git push --force-with-lease origin feature"},
+    "expect": "block"
+  },
+  {
+    "name": "allows normal git push",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git push origin feature-branch"},
+    "expect": "allow"
+  }
+]

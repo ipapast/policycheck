@@ -1,0 +1,26 @@
+[
+  {
+    "name": "blocks find / -delete",
+    "tool_name": "Bash",
+    "tool_input": {"command": "find /tmp -delete"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks find ~ -delete",
+    "tool_name": "Bash",
+    "tool_input": {"command": "find ~ -delete"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks find -exec rm",
+    "tool_name": "Bash",
+    "tool_input": {"command": "find /var -exec rm -rf {} +"},
+    "expect": "block"
+  },
+  {
+    "name": "allows find without delete",
+    "tool_name": "Bash",
+    "tool_input": {"command": "find . -name '*.log'"},
+    "expect": "allow"
+  }
+]

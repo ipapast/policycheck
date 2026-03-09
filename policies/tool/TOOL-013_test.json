@@ -1,0 +1,62 @@
+[
+  {
+    "name": "blocks psql DROP DATABASE",
+    "tool_name": "Bash",
+    "tool_input": {"command": "psql -c 'DROP DATABASE mydb'"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks psql DROP TABLE",
+    "tool_name": "Bash",
+    "tool_input": {"command": "psql -h localhost -d mydb -c 'DROP TABLE users'"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks psql TRUNCATE",
+    "tool_name": "Bash",
+    "tool_input": {"command": "psql -c 'TRUNCATE TABLE events'"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks psql DROP SCHEMA",
+    "tool_name": "Bash",
+    "tool_input": {"command": "psql -c 'DROP SCHEMA public CASCADE'"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks psql drop database lowercase",
+    "tool_name": "Bash",
+    "tool_input": {"command": "psql -c 'drop database mydb'"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks psql drop table lowercase",
+    "tool_name": "Bash",
+    "tool_input": {"command": "psql -c 'drop table users'"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks psql truncate lowercase",
+    "tool_name": "Bash",
+    "tool_input": {"command": "psql -c 'truncate events'"},
+    "expect": "block"
+  },
+  {
+    "name": "allows psql SELECT",
+    "tool_name": "Bash",
+    "tool_input": {"command": "psql -c 'SELECT * FROM users'"},
+    "expect": "allow"
+  },
+  {
+    "name": "allows psql connection",
+    "tool_name": "Bash",
+    "tool_input": {"command": "psql -h localhost -d mydb"},
+    "expect": "allow"
+  },
+  {
+    "name": "allows psql describe",
+    "tool_name": "Bash",
+    "tool_input": {"command": "psql -c '\\dt'"},
+    "expect": "allow"
+  }
+]

@@ -1,0 +1,14 @@
+[
+  {
+    "name": "blocks writing workflow files",
+    "tool_name": "Write",
+    "tool_input": {"file_path": "/Users/me/project/.github/workflows/deploy.yml"},
+    "expect": "block"
+  },
+  {
+    "name": "allows writing normal files",
+    "tool_name": "Write",
+    "tool_input": {"file_path": "/Users/me/project/src/main.go"},
+    "expect": "allow"
+  }
+]

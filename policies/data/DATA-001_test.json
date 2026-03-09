@@ -1,0 +1,38 @@
+[
+  {
+    "name": "blocks env",
+    "tool_name": "Bash",
+    "tool_input": {"command": "env"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks env with grep",
+    "tool_name": "Bash",
+    "tool_input": {"command": "env | grep SECRET"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks printenv",
+    "tool_name": "Bash",
+    "tool_input": {"command": "printenv"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks printenv specific var",
+    "tool_name": "Bash",
+    "tool_input": {"command": "printenv AWS_SECRET_KEY"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks export -p",
+    "tool_name": "Bash",
+    "tool_input": {"command": "export -p"},
+    "expect": "block"
+  },
+  {
+    "name": "allows export setting a var",
+    "tool_name": "Bash",
+    "tool_input": {"command": "export PATH=$PATH:/usr/local/bin"},
+    "expect": "allow"
+  }
+]

@@ -1,0 +1,26 @@
+[
+  {
+    "name": "blocks reading .env",
+    "tool_name": "Read",
+    "tool_input": {"file_path": "/Users/me/project/.env"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks reading .env.production",
+    "tool_name": "Read",
+    "tool_input": {"file_path": "/Users/me/project/.env.production"},
+    "expect": "block"
+  },
+  {
+    "name": "allows reading .env.example",
+    "tool_name": "Read",
+    "tool_input": {"file_path": "/Users/me/project/.env.example"},
+    "expect": "block"
+  },
+  {
+    "name": "allows reading normal config",
+    "tool_name": "Read",
+    "tool_input": {"file_path": "/Users/me/project/config.yaml"},
+    "expect": "allow"
+  }
+]

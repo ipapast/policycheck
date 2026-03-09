@@ -1,0 +1,68 @@
+[
+  {
+    "name": "blocks writing .zshrc",
+    "tool_name": "Write",
+    "tool_input": {"file_path": "/Users/me/.zshrc"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks writing .bashrc",
+    "tool_name": "Write",
+    "tool_input": {"file_path": "/Users/me/.bashrc"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks writing .gitconfig",
+    "tool_name": "Write",
+    "tool_input": {"file_path": "/Users/me/.gitconfig"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks writing .bash_profile",
+    "tool_name": "Write",
+    "tool_input": {"file_path": "/Users/me/.bash_profile"},
+    "expect": "block"
+  },
+  {
+    "name": "allows writing normal files",
+    "tool_name": "Write",
+    "tool_input": {"file_path": "/Users/me/project/main.go"},
+    "expect": "allow"
+  },
+  {
+    "name": "blocks reading .zshrc",
+    "tool_name": "Read",
+    "tool_input": {"file_path": "/Users/me/.zshrc"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks reading .bash_profile",
+    "tool_name": "Read",
+    "tool_input": {"file_path": "/Users/me/.bash_profile"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks reading .gitconfig",
+    "tool_name": "Read",
+    "tool_input": {"file_path": "/Users/me/.gitconfig"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks editing .zshrc",
+    "tool_name": "Edit",
+    "tool_input": {"file_path": "/Users/me/.zshrc"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks editing .zprofile",
+    "tool_name": "Edit",
+    "tool_input": {"file_path": "/Users/me/.zprofile"},
+    "expect": "block"
+  },
+  {
+    "name": "allows reading normal files",
+    "tool_name": "Read",
+    "tool_input": {"file_path": "/Users/me/project/main.go"},
+    "expect": "allow"
+  }
+]

@@ -1,0 +1,62 @@
+[
+  {
+    "name": "blocks aws iam create-role",
+    "tool_name": "Bash",
+    "tool_input": {"command": "aws iam create-role --role-name admin"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks aws iam attach-role-policy",
+    "tool_name": "Bash",
+    "tool_input": {"command": "aws iam attach-role-policy --role-name admin --policy-arn arn:aws:iam::policy/AdministratorAccess"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks aws iam put-role-policy",
+    "tool_name": "Bash",
+    "tool_input": {"command": "aws iam put-role-policy --role-name admin --policy-name full-access --policy-document file://policy.json"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks aws iam create-user",
+    "tool_name": "Bash",
+    "tool_input": {"command": "aws iam create-user --user-name hacker"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks aws iam create-access-key",
+    "tool_name": "Bash",
+    "tool_input": {"command": "aws iam create-access-key --user-name admin"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks aws iam delete-role",
+    "tool_name": "Bash",
+    "tool_input": {"command": "aws iam delete-role --role-name important-role"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks aws iam put-user-policy",
+    "tool_name": "Bash",
+    "tool_input": {"command": "aws iam put-user-policy --user-name admin --policy-name full --policy-document file://p.json"},
+    "expect": "block"
+  },
+  {
+    "name": "allows aws iam list-roles",
+    "tool_name": "Bash",
+    "tool_input": {"command": "aws iam list-roles"},
+    "expect": "allow"
+  },
+  {
+    "name": "allows aws iam get-role",
+    "tool_name": "Bash",
+    "tool_input": {"command": "aws iam get-role --role-name my-role"},
+    "expect": "allow"
+  },
+  {
+    "name": "allows aws s3 commands",
+    "tool_name": "Bash",
+    "tool_input": {"command": "aws s3 ls"},
+    "expect": "allow"
+  }
+]

@@ -1,0 +1,32 @@
+[
+  {
+    "name": "blocks rm -rf /",
+    "tool_name": "Bash",
+    "tool_input": {"command": "rm -rf /tmp/test"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks rm -r /",
+    "tool_name": "Bash",
+    "tool_input": {"command": "rm -r /var/log"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks rm -rf ~",
+    "tool_name": "Bash",
+    "tool_input": {"command": "rm -rf ~/Documents"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks rm -rf *",
+    "tool_name": "Bash",
+    "tool_input": {"command": "rm -rf *"},
+    "expect": "block"
+  },
+  {
+    "name": "allows rm on relative path",
+    "tool_name": "Bash",
+    "tool_input": {"command": "rm -rf ./node_modules"},
+    "expect": "allow"
+  }
+]

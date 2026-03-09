@@ -1,0 +1,44 @@
+[
+  {
+    "name": "blocks Slack send_message",
+    "tool_name": "mcp__claude_ai_Slack__slack_send_message",
+    "tool_input": {},
+    "expect": "block"
+  },
+  {
+    "name": "blocks Slack send_message_draft",
+    "tool_name": "mcp__claude_ai_Slack__slack_send_message_draft",
+    "tool_input": {},
+    "expect": "block"
+  },
+  {
+    "name": "blocks Slack schedule_message",
+    "tool_name": "mcp__claude_ai_Slack__slack_schedule_message",
+    "tool_input": {},
+    "expect": "block"
+  },
+  {
+    "name": "blocks Slack create_canvas",
+    "tool_name": "mcp__claude_ai_Slack__slack_create_canvas",
+    "tool_input": {},
+    "expect": "block"
+  },
+  {
+    "name": "allows Slack read_channel",
+    "tool_name": "mcp__claude_ai_Slack__slack_read_channel",
+    "tool_input": {},
+    "expect": "allow"
+  },
+  {
+    "name": "blocks Slack MCP server post_message",
+    "tool_name": "mcp__slack__slack_post_message",
+    "tool_input": {},
+    "expect": "block"
+  },
+  {
+    "name": "allows Slack MCP server read_channel",
+    "tool_name": "mcp__slack__slack_read_channel",
+    "tool_input": {},
+    "expect": "allow"
+  }
+]

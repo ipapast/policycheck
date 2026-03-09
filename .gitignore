@@ -1,0 +1,6 @@
+/policycheck
+/cedar-policies
+.idea/
+.vscode/
+.cursor/
+.cedar-ignores.json

@@ -1,0 +1,38 @@
+[
+  {
+    "name": "blocks git push origin main",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git push origin main"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks git push origin master",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git push origin master"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks git push upstream main",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git push upstream main"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks git push origin main with flags",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git push origin main --tags"},
+    "expect": "block"
+  },
+  {
+    "name": "allows git push to feature branch",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git push origin feature-branch"},
+    "expect": "allow"
+  },
+  {
+    "name": "allows git push to branch with main in name",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git push origin fix/main-page"},
+    "expect": "allow"
+  }
+]

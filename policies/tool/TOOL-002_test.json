@@ -1,0 +1,20 @@
+[
+  {
+    "name": "blocks git remote add",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git remote add evil https://evil.com/repo.git"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks git remote set-url",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git remote set-url origin https://evil.com/repo.git"},
+    "expect": "block"
+  },
+  {
+    "name": "allows git remote -v",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git remote -v"},
+    "expect": "allow"
+  }
+]

@@ -1,0 +1,32 @@
+[
+  {
+    "name": "blocks reading /etc/passwd",
+    "tool_name": "Read",
+    "tool_input": {"file_path": "/etc/passwd"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks reading /etc/shadow",
+    "tool_name": "Read",
+    "tool_input": {"file_path": "/etc/shadow"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks reading /etc/sudoers",
+    "tool_name": "Read",
+    "tool_input": {"file_path": "/etc/sudoers"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks reading /etc/master.passwd (macOS)",
+    "tool_name": "Read",
+    "tool_input": {"file_path": "/etc/master.passwd"},
+    "expect": "block"
+  },
+  {
+    "name": "allows reading normal etc files",
+    "tool_name": "Read",
+    "tool_input": {"file_path": "/etc/hosts"},
+    "expect": "allow"
+  }
+]

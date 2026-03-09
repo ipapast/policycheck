@@ -1,0 +1,38 @@
+[
+  {
+    "name": "blocks push to GitHub URL outside allowed account",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git push https://github.com/someone/repo main"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks push to GitLab",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git push https://gitlab.com/someone/repo main"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks push to Bitbucket",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git push https://bitbucket.org/someone/repo main"},
+    "expect": "block"
+  },
+  {
+    "name": "allows push to allowed GitHub account (HTTPS)",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git push https://github.com/ipapast/cedar-policies feature"},
+    "expect": "allow"
+  },
+  {
+    "name": "allows push to allowed GitHub account (SSH)",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git push git@github.com:ipapast/cedar-policies.git feature"},
+    "expect": "allow"
+  },
+  {
+    "name": "allows push to named remote (not covered by this rule)",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git push origin feature"},
+    "expect": "allow"
+  }
+]

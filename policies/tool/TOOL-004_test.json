@@ -1,0 +1,26 @@
+[
+  {
+    "name": "blocks npm publish",
+    "tool_name": "Bash",
+    "tool_input": {"command": "npm publish"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks yarn publish",
+    "tool_name": "Bash",
+    "tool_input": {"command": "yarn publish --new-version 1.0.0"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks npx publish",
+    "tool_name": "Bash",
+    "tool_input": {"command": "npx publish"},
+    "expect": "block"
+  },
+  {
+    "name": "allows npm install",
+    "tool_name": "Bash",
+    "tool_input": {"command": "npm install express"},
+    "expect": "allow"
+  }
+]

@@ -1,0 +1,32 @@
+[
+  {
+    "name": "blocks sudo",
+    "tool_name": "Bash",
+    "tool_input": {"command": "sudo apt install foo"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks su with user",
+    "tool_name": "Bash",
+    "tool_input": {"command": "su root"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks bare su",
+    "tool_name": "Bash",
+    "tool_input": {"command": "su"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks doas",
+    "tool_name": "Bash",
+    "tool_input": {"command": "doas rm /etc/passwd"},
+    "expect": "block"
+  },
+  {
+    "name": "allows normal commands",
+    "tool_name": "Bash",
+    "tool_input": {"command": "go test ./..."},
+    "expect": "allow"
+  }
+]

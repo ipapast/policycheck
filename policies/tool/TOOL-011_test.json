@@ -1,0 +1,44 @@
+[
+  {
+    "name": "blocks aws s3 rm --recursive",
+    "tool_name": "Bash",
+    "tool_input": {"command": "aws s3 rm s3://my-bucket --recursive"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks aws s3 rm with recursive flag anywhere",
+    "tool_name": "Bash",
+    "tool_input": {"command": "aws s3 rm --recursive s3://my-bucket/prefix/"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks aws s3 rb (remove bucket)",
+    "tool_name": "Bash",
+    "tool_input": {"command": "aws s3 rb s3://my-bucket"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks aws s3 rb --force",
+    "tool_name": "Bash",
+    "tool_input": {"command": "aws s3 rb s3://my-bucket --force"},
+    "expect": "block"
+  },
+  {
+    "name": "allows aws s3 rm single file",
+    "tool_name": "Bash",
+    "tool_input": {"command": "aws s3 rm s3://my-bucket/file.txt"},
+    "expect": "allow"
+  },
+  {
+    "name": "allows aws s3 ls",
+    "tool_name": "Bash",
+    "tool_input": {"command": "aws s3 ls s3://my-bucket"},
+    "expect": "allow"
+  },
+  {
+    "name": "allows aws s3 cp",
+    "tool_name": "Bash",
+    "tool_input": {"command": "aws s3 cp file.txt s3://my-bucket/"},
+    "expect": "allow"
+  }
+]

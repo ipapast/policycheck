@@ -1,0 +1,26 @@
+[
+  {
+    "name": "blocks docker --privileged",
+    "tool_name": "Bash",
+    "tool_input": {"command": "docker run --privileged ubuntu bash"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks docker mount root",
+    "tool_name": "Bash",
+    "tool_input": {"command": "docker run -v /etc:/mnt ubuntu bash"},
+    "expect": "block"
+  },
+  {
+    "name": "allows normal docker run",
+    "tool_name": "Bash",
+    "tool_input": {"command": "docker run ubuntu echo hello"},
+    "expect": "allow"
+  },
+  {
+    "name": "allows docker compose",
+    "tool_name": "Bash",
+    "tool_input": {"command": "docker compose up -d"},
+    "expect": "allow"
+  }
+]

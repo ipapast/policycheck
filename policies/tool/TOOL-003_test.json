@@ -1,0 +1,50 @@
+[
+  {
+    "name": "blocks git reset --hard",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git reset --hard HEAD~3"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks git checkout .",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git checkout ."},
+    "expect": "block"
+  },
+  {
+    "name": "blocks git clean -f",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git clean -fd"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks git branch -D",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git branch -D feature-branch"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks git tag -d",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git tag -d v1.0.0"},
+    "expect": "block"
+  },
+  {
+    "name": "allows git reset --soft",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git reset --soft HEAD~1"},
+    "expect": "allow"
+  },
+  {
+    "name": "allows git checkout branch",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git checkout -b new-branch"},
+    "expect": "allow"
+  },
+  {
+    "name": "allows git branch -d (lowercase)",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git branch -d merged-branch"},
+    "expect": "allow"
+  }
+]

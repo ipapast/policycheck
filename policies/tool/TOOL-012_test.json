@@ -1,0 +1,62 @@
+[
+  {
+    "name": "blocks cdk deploy",
+    "tool_name": "Bash",
+    "tool_input": {"command": "cdk deploy"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks cdk deploy with stack name",
+    "tool_name": "Bash",
+    "tool_input": {"command": "cdk deploy MyStack"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks cdk deploy --all",
+    "tool_name": "Bash",
+    "tool_input": {"command": "cdk deploy --all"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks cdk destroy",
+    "tool_name": "Bash",
+    "tool_input": {"command": "cdk destroy"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks cdk destroy with stack name",
+    "tool_name": "Bash",
+    "tool_input": {"command": "cdk destroy MyStack --force"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks npx cdk deploy",
+    "tool_name": "Bash",
+    "tool_input": {"command": "npx cdk deploy"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks npx cdk destroy",
+    "tool_name": "Bash",
+    "tool_input": {"command": "npx cdk destroy MyStack"},
+    "expect": "block"
+  },
+  {
+    "name": "allows cdk synth",
+    "tool_name": "Bash",
+    "tool_input": {"command": "cdk synth"},
+    "expect": "allow"
+  },
+  {
+    "name": "allows cdk diff",
+    "tool_name": "Bash",
+    "tool_input": {"command": "cdk diff"},
+    "expect": "allow"
+  },
+  {
+    "name": "allows cdk list",
+    "tool_name": "Bash",
+    "tool_input": {"command": "cdk list"},
+    "expect": "allow"
+  }
+]

@@ -1,0 +1,32 @@
+[
+  {
+    "name": "blocks chmod 777",
+    "tool_name": "Bash",
+    "tool_input": {"command": "chmod 777 /tmp/test"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks chmod -R 777",
+    "tool_name": "Bash",
+    "tool_input": {"command": "chmod -R 777 /var/www"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks recursive chown",
+    "tool_name": "Bash",
+    "tool_input": {"command": "chown -R root:root /etc"},
+    "expect": "block"
+  },
+  {
+    "name": "allows non-recursive chown",
+    "tool_name": "Bash",
+    "tool_input": {"command": "chown user:group file.txt"},
+    "expect": "allow"
+  },
+  {
+    "name": "allows safe chmod",
+    "tool_name": "Bash",
+    "tool_input": {"command": "chmod 755 script.sh"},
+    "expect": "allow"
+  }
+]

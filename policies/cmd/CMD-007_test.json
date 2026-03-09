@@ -1,0 +1,44 @@
+[
+  {
+    "name": "blocks dd",
+    "tool_name": "Bash",
+    "tool_input": {"command": "dd if=/dev/zero of=/dev/sda bs=1M"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks dd to disk",
+    "tool_name": "Bash",
+    "tool_input": {"command": "dd if=image.iso of=/dev/disk2"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks mkfs",
+    "tool_name": "Bash",
+    "tool_input": {"command": "mkfs.ext4 /dev/sda1"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks mkfs.xfs",
+    "tool_name": "Bash",
+    "tool_input": {"command": "mkfs.xfs /dev/nvme0n1p1"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks fdisk",
+    "tool_name": "Bash",
+    "tool_input": {"command": "fdisk /dev/sda"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks parted",
+    "tool_name": "Bash",
+    "tool_input": {"command": "parted /dev/sda mklabel gpt"},
+    "expect": "block"
+  },
+  {
+    "name": "allows normal commands",
+    "tool_name": "Bash",
+    "tool_input": {"command": "ls -la /dev/"},
+    "expect": "allow"
+  }
+]

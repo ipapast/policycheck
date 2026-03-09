@@ -1,0 +1,32 @@
+[
+  {
+    "name": "blocks editing settings.json",
+    "tool_name": "Edit",
+    "tool_input": {"file_path": "/Users/me/project/.claude/settings.json"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks editing settings.local.json",
+    "tool_name": "Edit",
+    "tool_input": {"file_path": "/Users/me/project/.claude/settings.local.json"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks editing SECURITY.md",
+    "tool_name": "Edit",
+    "tool_input": {"file_path": "/Users/me/project/.claude/SECURITY.md"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks writing settings.json",
+    "tool_name": "Write",
+    "tool_input": {"file_path": "/Users/me/project/.claude/settings.json"},
+    "expect": "block"
+  },
+  {
+    "name": "allows editing normal files",
+    "tool_name": "Edit",
+    "tool_input": {"file_path": "/Users/me/project/main.go"},
+    "expect": "allow"
+  }
+]
