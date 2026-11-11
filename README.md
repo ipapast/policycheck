@@ -8,6 +8,19 @@ Claude Code's built-in permission rules decide what to allow. cedar-policies add
 
 It is built for Claude Code. The stdin JSON interface is small, so adapting it to other agents is possible, but only Claude Code is tested today.
 
+This is a starting point. The rules cover common mistakes and obvious bad behavior, and they are meant to be read, changed and extended for your own setup.
+
+## What it helps with
+
+An agent with shell and file access can do real damage from one bad step. A prompt injection hidden in a README or a web page might tell it to "clean up" with `rm -rf`, "debug" by reading `~/.aws/credentials`, or "check connectivity" by calling the cloud metadata endpoint. A plain mistake can do the same thing without any attacker.
+
+These policies sit in front of every tool call and stop the common cases:
+
+- **Destructive commands:** `rm -rf` on broad paths, `sudo`, `chmod 777`, disk tools, `kill -9`
+- **Secrets:** SSH and cloud credentials, `.env` files, `credentials.json`, `.npmrc`, kubeconfig, private keys, environment dumps
+- **Exfiltration and SSRF:** piping downloads into a shell, POSTing data out with curl, fetching localhost or cloud metadata URLs
+- **Risky workflows:** force pushes, pushing to main, editing CI workflows or the agent's own settings, package publishing, mass deletes in AWS and Postgres
+
 ## How it works
 
 ```
@@ -144,6 +157,7 @@ For the full language reference, see the [Cedar docs](https://docs.cedarpolicy.c
 | `DATA-004` | writing to shell config and dotfiles |
 | `DATA-005` | reading system authentication files |
 | `DATA-006` | searching credential and secret files with Glob/Grep |
+| `DATA-007` | reading credential and secret files (credentials.json, secrets.*, .npmrc, .netrc, kubeconfig, .pem/.key) |
 | `NET-001` | piping downloads to shell execution |
 | `NET-002` | data exfiltration via curl/wget POST |
 | `NET-003` | accessing cloud metadata endpoints (SSRF risk) |

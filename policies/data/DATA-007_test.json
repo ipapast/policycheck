@@ -1,0 +1,194 @@
+[
+  {
+    "name": "blocks reading credentials.json",
+    "tool_name": "Read",
+    "tool_input": {"file_path": "/Users/me/project/config/credentials.json"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks reading credentials.yaml",
+    "tool_name": "Read",
+    "tool_input": {"file_path": "/srv/app/credentials.yaml"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks reading secrets.yaml",
+    "tool_name": "Read",
+    "tool_input": {"file_path": "/Users/me/project/secrets.yaml"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks reading secrets.json",
+    "tool_name": "Read",
+    "tool_input": {"file_path": "/Users/me/project/secrets.json"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks reading secrets.toml",
+    "tool_name": "Read",
+    "tool_input": {"file_path": "/Users/me/project/secrets.toml"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks reading .npmrc",
+    "tool_name": "Read",
+    "tool_input": {"file_path": "/Users/me/.npmrc"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks reading .netrc",
+    "tool_name": "Read",
+    "tool_input": {"file_path": "/Users/me/.netrc"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks reading .pgpass",
+    "tool_name": "Read",
+    "tool_input": {"file_path": "/Users/me/.pgpass"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks reading .git-credentials",
+    "tool_name": "Read",
+    "tool_input": {"file_path": "/Users/me/.git-credentials"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks reading .pypirc",
+    "tool_name": "Read",
+    "tool_input": {"file_path": "/Users/me/.pypirc"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks reading docker config",
+    "tool_name": "Read",
+    "tool_input": {"file_path": "/Users/me/.docker/config.json"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks reading kubeconfig",
+    "tool_name": "Read",
+    "tool_input": {"file_path": "/Users/me/.kube/config"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks reading pem file",
+    "tool_name": "Read",
+    "tool_input": {"file_path": "/Users/me/certs/server.pem"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks reading key file",
+    "tool_name": "Read",
+    "tool_input": {"file_path": "/Users/me/certs/server.key"},
+    "expect": "block"
+  },
+  {
+    "name": "allows reading doc about credentials",
+    "tool_name": "Read",
+    "tool_input": {"file_path": "/Users/me/project/docs/credentials-guide.md"},
+    "expect": "allow"
+  },
+  {
+    "name": "allows reading credentials test file",
+    "tool_name": "Read",
+    "tool_input": {"file_path": "/Users/me/project/src/credentials_test.go"},
+    "expect": "allow"
+  },
+  {
+    "name": "allows reading keystore source",
+    "tool_name": "Read",
+    "tool_input": {"file_path": "/Users/me/project/keystore.go"},
+    "expect": "allow"
+  },
+  {
+    "name": "allows reading secrets package source",
+    "tool_name": "Read",
+    "tool_input": {"file_path": "/Users/me/project/internal/secrets/store.go"},
+    "expect": "allow"
+  },
+  {
+    "name": "blocks cat credentials.json via Bash",
+    "tool_name": "Bash",
+    "tool_input": {"command": "cat config/credentials.json"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks cat secrets.yaml via Bash",
+    "tool_name": "Bash",
+    "tool_input": {"command": "cat secrets.yaml"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks cat .npmrc via Bash",
+    "tool_name": "Bash",
+    "tool_input": {"command": "cat ~/.npmrc"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks cat .netrc via Bash",
+    "tool_name": "Bash",
+    "tool_input": {"command": "cat $HOME/.netrc"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks cp .pgpass via Bash",
+    "tool_name": "Bash",
+    "tool_input": {"command": "cp ~/.pgpass /tmp/x"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks cat docker config via Bash",
+    "tool_name": "Bash",
+    "tool_input": {"command": "cat ~/.docker/config.json"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks cat kubeconfig via Bash",
+    "tool_name": "Bash",
+    "tool_input": {"command": "cat ~/.kube/config"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks cat pem via Bash",
+    "tool_name": "Bash",
+    "tool_input": {"command": "cat server.pem"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks openssl key via Bash",
+    "tool_name": "Bash",
+    "tool_input": {"command": "openssl rsa -in certs/server.key -text"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks base64 git-credentials via Bash",
+    "tool_name": "Bash",
+    "tool_input": {"command": "base64 ~/.git-credentials"},
+    "expect": "block"
+  },
+  {
+    "name": "allows catting source in secrets package",
+    "tool_name": "Bash",
+    "tool_input": {"command": "cat internal/secrets/store.go"},
+    "expect": "allow"
+  },
+  {
+    "name": "allows catting credentials guide",
+    "tool_name": "Bash",
+    "tool_input": {"command": "cat docs/credentials-guide.md"},
+    "expect": "allow"
+  },
+  {
+    "name": "allows npm install",
+    "tool_name": "Bash",
+    "tool_input": {"command": "npm install && npm test"},
+    "expect": "allow"
+  },
+  {
+    "name": "allows kubectl without kubeconfig path",
+    "tool_name": "Bash",
+    "tool_input": {"command": "kubectl get pods"},
+    "expect": "allow"
+  }
+]
