@@ -2,9 +2,11 @@
 
 [![test](https://github.com/ipapast/cedar-policies/actions/workflows/test.yml/badge.svg)](https://github.com/ipapast/cedar-policies/actions/workflows/test.yml)
 
-Cedar policy engine for AI coding agents - testable, named security rules for tool-use guardrails.
+Tested, named security guardrails for [Claude Code](https://claude.com/claude-code), written as [Cedar](https://docs.cedarpolicy.com/) policies.
 
-Built on [Cedar](https://docs.cedarpolicy.com/), AWS's open-source policy language.
+Claude Code's built-in permission rules decide what to allow. cedar-policies adds a layer on top: every rule has a stable ID and message, ships with unit tests, can be ignored per project with an expiry, and every block or ignore can be written to an audit log. It runs as a `PreToolUse` hook and covers Bash, file tools, Glob/Grep and WebFetch.
+
+It is built for Claude Code. The stdin JSON interface is small, so adapting it to other agents is possible, but only Claude Code is tested today.
 
 ## How it works
 
@@ -16,7 +18,20 @@ Agent tool call
   -> exit 0 (allow) or exit 2 (block with ID + message)
 ```
 
-The input is a JSON object with `tool_name` and `tool_input` fields. Any agent framework that can pipe tool calls through a hook can use this.
+The input is a JSON object with `tool_name` and `tool_input` fields, in Claude Code's hook format.
+
+`policycheck` is a single static binary. It needs no network, no daemon and no credentials, and it only reads the policy files you point it at and (optionally) writes an audit log.
+
+## Use it with the built-in permissions and the sandbox
+
+This is one layer, not the whole defense:
+
+- **Permission rules** (`permissions.allow/ask/deny` in `settings.json`) are the first line. Keep using them. Their matching on command arguments is documented as fragile, which is where extra policies help.
+- **Hooks like this one** can inspect the full tool input, for example a URL inside a Bash command, or Glob and Grep targets. A blocked call is stopped even if a permission rule would have allowed it.
+- **The sandbox** is the only layer that enforces limits at the OS level, and it covers Bash only. Hooks run outside it, so enable the sandbox for anything that matters and treat these policies as an additional check, not a replacement.
+
+See [SECURITY.md](SECURITY.md) for what pattern matching can and can't catch.
+
 
 ## Quick start
 
@@ -59,9 +74,9 @@ Add to your project's `.claude/settings.json`:
 
 Use an absolute path to the `policies/` directory in your clone. If the binary can't load the policies or can't parse its input, it exits 2 and blocks the tool call (fail closed), so a wrong path shows up immediately instead of silently disabling the guardrails.
 
-### Other agents
+### Other agents (untested)
 
-Pipe tool calls as JSON to stdin before execution:
+If your agent can run a command before each tool call and treat exit code 2 as "block", you can try piping tool calls to it as JSON. Tool names and input fields need to match Claude Code's (`Bash`, `Read`, `WebFetch`, ...), so other agents will probably need a small adapter:
 
 ```bash
 echo '{"tool_name":"Bash","tool_input":{"command":"rm -rf /"}}' | ./policycheck ./policies
