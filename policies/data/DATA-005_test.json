@@ -28,5 +28,29 @@
     "tool_name": "Read",
     "tool_input": {"file_path": "/etc/hosts"},
     "expect": "allow"
+  },
+  {
+    "name": "blocks cat /etc/passwd via Bash",
+    "tool_name": "Bash",
+    "tool_input": {"command": "cat /etc/passwd"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks cat /etc/shadow via Bash",
+    "tool_name": "Bash",
+    "tool_input": {"command": "cat /etc/shadow"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks sudoers via Bash",
+    "tool_name": "Bash",
+    "tool_input": {"command": "less /etc/sudoers"},
+    "expect": "block"
+  },
+  {
+    "name": "allows /etc/hosts via Bash",
+    "tool_name": "Bash",
+    "tool_input": {"command": "cat /etc/hosts"},
+    "expect": "allow"
   }
 ]

@@ -22,5 +22,41 @@
     "tool_name": "Read",
     "tool_input": {"file_path": "/Users/me/project/main.go"},
     "expect": "allow"
+  },
+  {
+    "name": "blocks cat of ssh key via Bash",
+    "tool_name": "Bash",
+    "tool_input": {"command": "cat ~/.ssh/id_rsa"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks cp of aws credentials via Bash",
+    "tool_name": "Bash",
+    "tool_input": {"command": "cp $HOME/.aws/credentials /tmp/x"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks base64 of absolute ssh path",
+    "tool_name": "Bash",
+    "tool_input": {"command": "base64 /Users/me/.ssh/id_ed25519"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks gcloud config via Bash",
+    "tool_name": "Bash",
+    "tool_input": {"command": "cat ~/.config/gcloud/application_default_credentials.json"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks relative .ssh path via Bash",
+    "tool_name": "Bash",
+    "tool_input": {"command": "cat .ssh/id_rsa"},
+    "expect": "block"
+  },
+  {
+    "name": "allows ordinary Bash commands",
+    "tool_name": "Bash",
+    "tool_input": {"command": "ls ~/project"},
+    "expect": "allow"
   }
 ]

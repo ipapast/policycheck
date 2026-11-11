@@ -13,11 +13,8 @@ import (
 )
 
 type hookInput struct {
-	ToolName  string `json:"tool_name"`
-	ToolInput struct {
-		Command  string `json:"command"`
-		FilePath string `json:"file_path"`
-	} `json:"tool_input"`
+	ToolName  string    `json:"tool_name"`
+	ToolInput toolInput `json:"tool_input"`
 }
 
 type ignoreEntry struct {
@@ -78,10 +75,28 @@ func saveIgnores(entries []ignoreEntry) error {
 
 // isIgnored checks if a policy is ignored. If the ignore has a path, it only
 // matches when the command or file_path contains that substring.
+// policyMatches reports whether an ignore for ignored covers the policy id.
+// Ignoring "DATA-002" also covers its variants "DATA-002b", "DATA-002c", etc.
+func policyMatches(ignored, id string) bool {
+	if ignored == id {
+		return true
+	}
+	suffix, ok := strings.CutPrefix(id, ignored)
+	if !ok || suffix == "" {
+		return false
+	}
+	for _, r := range suffix {
+		if r < 'a' || r > 'z' {
+			return false
+		}
+	}
+	return true
+}
+
 func isIgnored(id string, ignores []ignoreEntry, command string, filePath string) *ignoreEntry {
 	now := time.Now()
 	for i, e := range ignores {
-		if e.Policy != id {
+		if !policyMatches(e.Policy, id) {
 			continue
 		}
 		if e.Expires != "" {
@@ -277,55 +292,22 @@ func cmdEvaluate(policiesDir string) {
 
 	ignores, _ := loadIgnores() // ignore errors, just evaluate without ignores
 
-	// Build Cedar request: principal=Agent, action=ToolName, resource=args
-	context := cedar.RecordMap{}
-	if hook.ToolInput.Command != "" {
-		context["command"] = cedar.String(hook.ToolInput.Command)
-	}
-	if hook.ToolInput.FilePath != "" {
-		context["file_path"] = cedar.String(hook.ToolInput.FilePath)
-	}
+	violations := evaluate(ps, hook.ToolName, hook.ToolInput)
 
-	req := cedar.Request{
-		Principal: cedar.NewEntityUID("Agent", "claude"),
-		Action:    cedar.NewEntityUID("Action", cedar.String(hook.ToolName)),
-		Resource:  cedar.NewEntityUID("Resource", "tool_call"),
-		Context:   cedar.NewRecord(context),
-	}
-
-	decision, diag := ps.IsAuthorized(cedar.EntityMap{}, req)
-
-	if decision == cedar.Deny {
-		id := "unknown"
-		msg := ""
-		if len(diag.Reasons) > 0 {
-			id = string(diag.Reasons[0].PolicyID)
+	blocked := false
+	for _, v := range violations {
+		if ign := isIgnored(v.ID, ignores, hook.ToolInput.Command, hook.ToolInput.FilePath); ign != nil {
+			fmt.Fprintf(os.Stderr, "IGNORED [%s]: %s (reason: %s, expires: %s)\n", v.ID, v.Msg, ign.Reason, ign.Expires)
+			continue
 		}
-		// Look up @msg annotation from the matching policy
-		if len(diag.Reasons) > 0 {
-			for pid, p := range ps.All() {
-				if pid == diag.Reasons[0].PolicyID {
-					if ann := p.Annotations(); ann != nil {
-						if v, ok := ann["msg"]; ok {
-							msg = string(v)
-						}
-					}
-					break
-				}
-			}
-		}
-
-		// Check if this policy is ignored
-		if ign := isIgnored(id, ignores, hook.ToolInput.Command, hook.ToolInput.FilePath); ign != nil {
-			fmt.Fprintf(os.Stderr, "IGNORED [%s]: %s (reason: %s, expires: %s)\n", id, msg, ign.Reason, ign.Expires)
-			return // exit 0, allow
-		}
-
-		if msg != "" {
-			fmt.Fprintf(os.Stderr, "BLOCKED [%s]: %s\n", id, msg)
+		blocked = true
+		if v.Msg != "" {
+			fmt.Fprintf(os.Stderr, "BLOCKED [%s]: %s\n", v.ID, v.Msg)
 		} else {
-			fmt.Fprintf(os.Stderr, "BLOCKED [%s]\n", id)
+			fmt.Fprintf(os.Stderr, "BLOCKED [%s]\n", v.ID)
 		}
+	}
+	if blocked {
 		os.Exit(2)
 	}
 }

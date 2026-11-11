@@ -54,27 +54,16 @@ func TestPolicies(t *testing.T) {
 
 		for _, tc := range cases {
 			t.Run(tc.Name, func(t *testing.T) {
-				context := cedar.RecordMap{}
-				if cmd, ok := tc.ToolInput["command"].(string); ok && cmd != "" {
-					context["command"] = cedar.String(cmd)
-				}
-				if fp, ok := tc.ToolInput["file_path"].(string); ok && fp != "" {
-					context["file_path"] = cedar.String(fp)
-				}
+				var in toolInput
+				in.Command, _ = tc.ToolInput["command"].(string)
+				in.FilePath, _ = tc.ToolInput["file_path"].(string)
 
-				req := cedar.Request{
-					Principal: cedar.NewEntityUID("Agent", "claude"),
-					Action:    cedar.NewEntityUID("Action", cedar.String(tc.ToolName)),
-					Resource:  cedar.NewEntityUID("Resource", "tool_call"),
-					Context:   cedar.NewRecord(context),
-				}
+				violations := evaluate(ps, tc.ToolName, in)
 
-				decision, _ := ps.IsAuthorized(cedar.EntityMap{}, req)
-
-				if tc.Expect == "block" && decision != cedar.Deny {
+				if tc.Expect == "block" && len(violations) == 0 {
 					t.Errorf("expected block, got allow")
 				}
-				if tc.Expect == "allow" && decision == cedar.Deny {
+				if tc.Expect == "allow" && len(violations) > 0 {
 					t.Errorf("expected allow, got block")
 				}
 			})

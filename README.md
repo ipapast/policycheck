@@ -144,7 +144,11 @@ Numbers are sequential within each prefix: `CMD-001`, `CMD-002`, `NET-001`, etc.
 
 ## Limitations
 
-This is a guardrail, not a sandbox. Rules are glob matches on the raw command string or file path, so they are easy to get around: `rm  -rf /` (two spaces) or `cat ~/.ssh/id_rsa` through Bash will not match rules written for the exact forms, and the DATA rules mostly cover the Read tool, not shell access. Named git remotes are not resolved. Treat the policies as a safety net for mistakes and obvious bad behavior, and use real isolation for anything critical. See [SECURITY.md](SECURITY.md).
+This is a guardrail, not a sandbox. Rules are glob matches on the command string or file path, not a parse of what the shell will actually do.
+
+To make that harder to dodge, Bash commands are checked in several forms: as typed, with whitespace collapsed, and split into sub-commands (`;`, `&&`, `||`, `|`, newlines, `$(...)`, backticks). Leading env assignments and wrappers like `nohup`, `exec` and `env` are stripped, `/bin/rm` and `\rm` are treated as `rm`, and any recursive `rm` (`-r`, `-R`, `-fr`, `--recursive`) is rewritten to `rm -rf`. If several policies match, all of them are reported.
+
+It still cannot see through variable expansion, `eval`, base64-encoded payloads, scripts that do the dangerous thing internally, or `cd` followed by relative paths. Named git remotes are not resolved. Treat the policies as a safety net for mistakes and obvious bad behavior, and use real isolation for anything critical. See [SECURITY.md](SECURITY.md).
 
 ## Testing policies
 
@@ -204,6 +208,8 @@ You can temporarily suppress a policy per project. Default expiry is 1 week.
 ./policycheck unignore CMD-001
 ```
 
+Ignoring a policy also ignores its lettered variants, so `ignore DATA-002` covers `DATA-002b` (the Bash version of the same rule).
+
 Options: `--reason` (optional), `--path` (scope to commands/files matching this substring), `--expires` (default: 1 week from now).
 
 Ignores are stored in `.cedar-ignores.json` in the current directory. This file is personal and should not be committed. Add it to your project's `.gitignore`:
@@ -235,7 +241,8 @@ To use new `tool_input` fields in Cedar context, add them to the `hookInput` str
 ```
 cedar-policies/
   cmd/policycheck/
-    main.go            # hook binary
+    main.go            # hook binary, ignores
+    eval.go            # command normalization and evaluation
     main_test.go       # test runner (loads *_test.json files)
   examples/            # policies that need customizing before use
   policies/

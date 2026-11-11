@@ -28,5 +28,95 @@
     "tool_name": "Bash",
     "tool_input": {"command": "rm -rf ./node_modules"},
     "expect": "allow"
+  },
+  {
+    "name": "blocks rm -rf with extra whitespace",
+    "tool_name": "Bash",
+    "tool_input": {"command": "rm  -rf   /tmp/x"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks rm -fr",
+    "tool_name": "Bash",
+    "tool_input": {"command": "rm -fr /var/data"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks rm -Rf",
+    "tool_name": "Bash",
+    "tool_input": {"command": "rm -Rf ~/stuff"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks rm --recursive --force",
+    "tool_name": "Bash",
+    "tool_input": {"command": "rm --recursive --force /opt"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks rm -r -f split flags",
+    "tool_name": "Bash",
+    "tool_input": {"command": "rm -r -f /opt"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks rm with -- separator",
+    "tool_name": "Bash",
+    "tool_input": {"command": "rm -rf -- /opt"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks /bin/rm",
+    "tool_name": "Bash",
+    "tool_input": {"command": "/bin/rm -rf /opt"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks backslash-escaped rm",
+    "tool_name": "Bash",
+    "tool_input": {"command": "\\rm -rf /opt"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks rm chained after ls",
+    "tool_name": "Bash",
+    "tool_input": {"command": "ls && rm -rf /opt"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks rm after semicolon",
+    "tool_name": "Bash",
+    "tool_input": {"command": "echo hi; rm -rf /opt"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks rm in command substitution",
+    "tool_name": "Bash",
+    "tool_input": {"command": "echo $(rm -rf /opt)"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks rm behind env assignment",
+    "tool_name": "Bash",
+    "tool_input": {"command": "FOO=1 rm -rf /opt"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks rm behind nohup",
+    "tool_name": "Bash",
+    "tool_input": {"command": "nohup rm -rf /opt"},
+    "expect": "block"
+  },
+  {
+    "name": "allows chained safe commands",
+    "tool_name": "Bash",
+    "tool_input": {"command": "ls && echo done"},
+    "expect": "allow"
+  },
+  {
+    "name": "allows non-recursive rm of a file",
+    "tool_name": "Bash",
+    "tool_input": {"command": "rm /tmp/file.txt"},
+    "expect": "allow"
   }
 ]

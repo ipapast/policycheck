@@ -12,7 +12,7 @@
     "expect": "block"
   },
   {
-    "name": "allows reading .env.example",
+    "name": "blocks reading .env.example",
     "tool_name": "Read",
     "tool_input": {"file_path": "/Users/me/project/.env.example"},
     "expect": "block"
@@ -21,6 +21,36 @@
     "name": "allows reading normal config",
     "tool_name": "Read",
     "tool_input": {"file_path": "/Users/me/project/config.yaml"},
+    "expect": "allow"
+  },
+  {
+    "name": "blocks cat .env via Bash",
+    "tool_name": "Bash",
+    "tool_input": {"command": "cat .env"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks cat nested .env via Bash",
+    "tool_name": "Bash",
+    "tool_input": {"command": "cat config/.env"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks .env.production via Bash",
+    "tool_name": "Bash",
+    "tool_input": {"command": "grep KEY .env.production"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks sourcing .env via Bash",
+    "tool_name": "Bash",
+    "tool_input": {"command": "source .env && ./run"},
+    "expect": "block"
+  },
+  {
+    "name": "allows unrelated Bash command mentioning environment",
+    "tool_name": "Bash",
+    "tool_input": {"command": "echo environment"},
     "expect": "allow"
   }
 ]
