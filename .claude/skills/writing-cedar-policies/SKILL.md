@@ -41,6 +41,12 @@ The input is always:
 |---|---|---|
 | `context.command` | `tool_input.command` | `action == Action::"Bash"` |
 | `context.file_path` | `tool_input.file_path` | `action == Action::"Read"`, `Action::"Write"`, `Action::"Edit"` |
+| `context.url` | `tool_input.url` | `action == Action::"WebFetch"` |
+| `context.path` | `tool_input.path` | `action == Action::"Glob"`, `Action::"Grep"` (optional) |
+| `context.pattern` | `tool_input.pattern` | `action == Action::"Glob"`, `Action::"Grep"` |
+| `context.glob` | `tool_input.glob` | `action == Action::"Grep"` (optional) |
+
+Reading a missing attribute makes the rule error and not match, so guard optional fields: `context has path && context.path like "..."`. Do this whenever one rule covers several tools.
 
 Action is the tool name: `Action::"Bash"`, `Action::"Read"`, `Action::"Write"`, `Action::"Edit"`, `Action::"mcp__*"`, etc.
 

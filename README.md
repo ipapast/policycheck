@@ -97,9 +97,11 @@ For the full language reference, see the [Cedar docs](https://docs.cedarpolicy.c
 | `DATA-003` | reading .env files |
 | `DATA-004` | writing to shell config and dotfiles |
 | `DATA-005` | reading system authentication files |
+| `DATA-006` | searching credential and secret files with Glob/Grep |
 | `NET-001` | piping downloads to shell execution |
 | `NET-002` | data exfiltration via curl/wget POST |
 | `NET-003` | accessing cloud metadata endpoints (SSRF risk) |
+| `NET-004` | WebFetch to localhost, private network and internal URLs |
 | `TOOL-001` | git force push |
 | `TOOL-002` | modifying git remotes |
 | `TOOL-003` | destructive git operations |
@@ -168,6 +170,12 @@ The hook input is mapped to Cedar context:
 |---|---|---|
 | `context.command` | `tool_input.command` (Bash) | `"rm -rf /tmp"` |
 | `context.file_path` | `tool_input.file_path` (Read/Write/Edit) | `"~/.ssh/id_rsa"` |
+| `context.url` | `tool_input.url` (WebFetch) | `"http://169.254.169.254/"` |
+| `context.path` | `tool_input.path` (Glob/Grep) | `"/Users/me/.ssh"` |
+| `context.pattern` | `tool_input.pattern` (Glob/Grep) | `"**/*.pem"` |
+| `context.glob` | `tool_input.glob` (Grep) | `"*.env"` |
+
+Fields are only present when the tool sends them, so guard optional ones with `context has path && ...` in a rule that can match several tools.
 
 Action is the tool name: `Action::"Bash"`, `Action::"Read"`, `Action::"Write"`, `Action::"mcp__slack__slack_post_message"`, etc.
 
@@ -210,7 +218,7 @@ You can temporarily suppress a policy per project. Default expiry is 1 week.
 
 Ignoring a policy also ignores its lettered variants, so `ignore DATA-002` covers `DATA-002b` (the Bash version of the same rule).
 
-Options: `--reason` (optional), `--path` (scope to commands/files matching this substring), `--expires` (default: 1 week from now).
+Options: `--reason` (optional), `--path` (scope to calls that touch this directory or something inside it, matched on whole path segments, so `/tmp` covers `/tmp/x` but not `/tmpfoo` or `/home/me/tmp-secrets`), `--expires` (default: 1 week from now).
 
 Ignores are stored in `.cedar-ignores.json` in the current directory. This file is personal and should not be committed. Add it to your project's `.gitignore`:
 
@@ -222,19 +230,34 @@ Or to your global gitignore (`git config --global core.excludesfile`) to cover a
 
 When an ignored policy would have blocked, it logs `IGNORED [CMD-001]: ...` to stderr so you still have visibility.
 
+## Audit log
+
+Set `POLICYCHECK_AUDIT_LOG` to a file path and every call that matched a policy is appended as one JSON line, including calls that were allowed only because of an ignore:
+
+```bash
+export POLICYCHECK_AUDIT_LOG=~/.local/state/policycheck/audit.jsonl
+```
+
+```json
+{"time":"2026-03-09T09:43:00Z","tool":"Bash","decision":"block","command":"rm -rf /opt","violations":[{"id":"CMD-001","msg":"rm -r/-rf on dangerous paths (/, ~, *) is not allowed"}]}
+```
+
+Allowed calls that matched nothing are not logged. The file is created with mode 0600 because commands and paths may contain sensitive values. If the log can't be written, `policycheck` prints a warning and still enforces the policies.
+
+## Versions
+
+`policycheck --version` prints the version. Binaries installed with `go install ...@v1.2.3` report that tag; builds from a checkout report a commit-based version (or `dev` outside a git checkout). Pass `-ldflags "-X main.version=..."` to set one explicitly.
+
 ## What else can be checked
 
-Claude Code sends a `tool_name` and `tool_input` for every tool call. Currently we check `command` (Bash) and `file_path` (Read/Write/Edit), but there are more tools you could write policies for:
+Claude Code sends a `tool_name` and `tool_input` for every tool call. Bash (`command`), Read/Write/Edit (`file_path`), WebFetch (`url`) and Glob/Grep (`path`, `pattern`, `glob`) are mapped into the context. Tools you could still write policies for:
 
-- `Glob` - sends `{"pattern": "**/*.pem", "path": "/etc"}` - block glob patterns targeting sensitive directories
-- `Grep` - sends `{"pattern": "password", "path": "...", "glob": "*.env"}` - block searching for secrets
 - `Agent` - sends `{"prompt": "...", "subagent_type": "..."}` - restrict which subagent types can run
-- `WebFetch` - sends `{"url": "https://...", "prompt": "..."}` - block fetching from internal URLs (read-only, no POST)
 - `WebSearch` - sends `{"query": "..."}` - restrict search queries
 - `NotebookEdit` - sends `{"notebook_path": "...", ...}` - same concerns as Write but for notebooks
 - MCP tools - any `mcp__*` tool can be matched by action name, with or without checking input fields
 
-To use new `tool_input` fields in Cedar context, add them to the `hookInput` struct in `main.go` and the corresponding context-building logic in both `cmdEvaluate` and `TestPolicies`.
+To use a new `tool_input` field in Cedar context, add it to the `toolInput` struct and to `buildContext` in `cmd/policycheck/eval.go`. The test runner picks it up automatically.
 
 ## Files
 
@@ -243,6 +266,7 @@ cedar-policies/
   cmd/policycheck/
     main.go            # hook binary, ignores
     eval.go            # command normalization and evaluation
+    audit.go           # audit log and version
     main_test.go       # test runner (loads *_test.json files)
   examples/            # policies that need customizing before use
   policies/

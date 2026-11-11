@@ -11,11 +11,16 @@ import (
 type toolInput struct {
 	Command  string `json:"command"`
 	FilePath string `json:"file_path"`
+	URL      string `json:"url"`
+	Path     string `json:"path"`
+	Pattern  string `json:"pattern"`
+	Glob     string `json:"glob"`
 }
 
 type violation struct {
-	ID  string
-	Msg string
+	ID      string `json:"id"`
+	Msg     string `json:"msg,omitempty"`
+	Ignored bool   `json:"ignored,omitempty"`
 }
 
 var envAssignment = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*=`)
@@ -113,13 +118,19 @@ func canonicalRm(args []string) []string {
 	return append([]string{"rm", "-rf"}, rest...)
 }
 
-func buildContext(command, filePath string) cedar.Record {
+func buildContext(in toolInput) cedar.Record {
 	ctx := cedar.RecordMap{}
-	if command != "" {
-		ctx["command"] = cedar.String(command)
-	}
-	if filePath != "" {
-		ctx["file_path"] = cedar.String(filePath)
+	for k, v := range map[string]string{
+		"command":   in.Command,
+		"file_path": in.FilePath,
+		"url":       in.URL,
+		"path":      in.Path,
+		"pattern":   in.Pattern,
+		"glob":      in.Glob,
+	} {
+		if v != "" {
+			ctx[cedar.String(k)] = cedar.String(v)
+		}
 	}
 	return cedar.NewRecord(ctx)
 }
@@ -134,11 +145,13 @@ func evaluate(ps *cedar.PolicySet, toolName string, in toolInput) []violation {
 
 	found := map[string]bool{}
 	for _, c := range commands {
+		variant := in
+		variant.Command = c
 		req := cedar.Request{
 			Principal: cedar.NewEntityUID("Agent", "claude"),
 			Action:    cedar.NewEntityUID("Action", cedar.String(toolName)),
 			Resource:  cedar.NewEntityUID("Resource", "tool_call"),
-			Context:   buildContext(c, in.FilePath),
+			Context:   buildContext(variant),
 		}
 		decision, diag := ps.IsAuthorized(cedar.EntityMap{}, req)
 		if decision != cedar.Deny {

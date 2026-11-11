@@ -1,0 +1,92 @@
+[
+  {
+    "name": "blocks WebFetch to localhost",
+    "tool_name": "WebFetch",
+    "tool_input": {"url": "http://localhost:8080/admin"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks WebFetch to 127.0.0.1",
+    "tool_name": "WebFetch",
+    "tool_input": {"url": "http://127.0.0.1/"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks WebFetch to 0.0.0.0",
+    "tool_name": "WebFetch",
+    "tool_input": {"url": "http://0.0.0.0:3000"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks WebFetch to IPv6 loopback",
+    "tool_name": "WebFetch",
+    "tool_input": {"url": "http://[::1]:9000/"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks WebFetch to cloud metadata IP",
+    "tool_name": "WebFetch",
+    "tool_input": {"url": "http://169.254.169.254/latest/meta-data/"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks WebFetch to 10.x",
+    "tool_name": "WebFetch",
+    "tool_input": {"url": "https://10.0.3.7/api"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks WebFetch to 192.168.x",
+    "tool_name": "WebFetch",
+    "tool_input": {"url": "http://192.168.1.1/"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks WebFetch to 172.16.x",
+    "tool_name": "WebFetch",
+    "tool_input": {"url": "http://172.16.0.5/"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks WebFetch to 172.31.x",
+    "tool_name": "WebFetch",
+    "tool_input": {"url": "http://172.31.255.1/"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks WebFetch to .internal host",
+    "tool_name": "WebFetch",
+    "tool_input": {"url": "http://billing.internal/health"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks WebFetch to .local host",
+    "tool_name": "WebFetch",
+    "tool_input": {"url": "http://printer.local/"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks WebFetch with userinfo trick",
+    "tool_name": "WebFetch",
+    "tool_input": {"url": "http://example.com@127.0.0.1/"},
+    "expect": "block"
+  },
+  {
+    "name": "allows WebFetch to public site",
+    "tool_name": "WebFetch",
+    "tool_input": {"url": "https://docs.cedarpolicy.com/"},
+    "expect": "allow"
+  },
+  {
+    "name": "allows WebFetch to 172.32.x (public range)",
+    "tool_name": "WebFetch",
+    "tool_input": {"url": "http://172.32.0.1/"},
+    "expect": "allow"
+  },
+  {
+    "name": "allows WebFetch to domain starting with 10",
+    "tool_name": "WebFetch",
+    "tool_input": {"url": "https://10x.example.com/"},
+    "expect": "allow"
+  }
+]

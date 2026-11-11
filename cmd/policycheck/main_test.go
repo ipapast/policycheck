@@ -55,8 +55,10 @@ func TestPolicies(t *testing.T) {
 		for _, tc := range cases {
 			t.Run(tc.Name, func(t *testing.T) {
 				var in toolInput
-				in.Command, _ = tc.ToolInput["command"].(string)
-				in.FilePath, _ = tc.ToolInput["file_path"].(string)
+				raw, _ := json.Marshal(tc.ToolInput)
+				if err := json.Unmarshal(raw, &in); err != nil {
+					t.Fatalf("bad tool_input: %v", err)
+				}
 
 				violations := evaluate(ps, tc.ToolName, in)
 

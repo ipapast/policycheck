@@ -28,13 +28,15 @@ type ignoreEntry struct {
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Fprintf(os.Stderr, "usage: policycheck <policies-dir>\n")
-		fmt.Fprintf(os.Stderr, "       policycheck ignore <policy-id> [--reason <reason>] [--path <pattern>] [--expires <date>]\n")
+		fmt.Fprintf(os.Stderr, "       policycheck ignore <policy-id> [--reason <reason>] [--path <dir>] [--expires <date>]\n")
 		fmt.Fprintf(os.Stderr, "       policycheck list-ignores\n")
 		fmt.Fprintf(os.Stderr, "       policycheck unignore <policy-id>\n")
 		os.Exit(1)
 	}
 
 	switch os.Args[1] {
+	case "--version", "-version", "version":
+		fmt.Printf("policycheck %s\n", versionString())
 	case "ignore":
 		cmdIgnore()
 	case "list-ignores":
@@ -93,7 +95,7 @@ func policyMatches(ignored, id string) bool {
 	return true
 }
 
-func isIgnored(id string, ignores []ignoreEntry, command string, filePath string) *ignoreEntry {
+func isIgnored(id string, ignores []ignoreEntry, in toolInput) *ignoreEntry {
 	now := time.Now()
 	for i, e := range ignores {
 		if !policyMatches(e.Policy, id) {
@@ -105,25 +107,38 @@ func isIgnored(id string, ignores []ignoreEntry, command string, filePath string
 				continue // expired
 			}
 		}
-		// If path is set, only ignore when command or file_path matches
-		if e.Path != "" {
-			input := command + filePath
-			if !containsPattern(input, e.Path) {
-				continue
-			}
+		if e.Path != "" && !pathScopeMatches(e.Path, in) {
+			continue
 		}
 		return &ignores[i]
 	}
 	return nil
 }
 
-func containsPattern(s, pattern string) bool {
-	return strings.Contains(s, pattern)
+// pathScopeMatches reports whether the call touches scope or something inside
+// it. It compares whole path segments, so "/tmp" matches "/tmp/x" but not
+// "/tmpfoo" or "/home/me/tmp-secrets".
+func pathScopeMatches(scope string, in toolInput) bool {
+	scope = strings.TrimRight(scope, "/")
+	candidates := []string{in.FilePath, in.Path}
+	for _, tok := range strings.Fields(in.Command) {
+		tok = strings.Trim(tok, `'"`)
+		candidates = append(candidates, tok)
+		if _, v, ok := strings.Cut(tok, "="); ok {
+			candidates = append(candidates, strings.Trim(v, `'"`))
+		}
+	}
+	for _, c := range candidates {
+		if c == scope || strings.HasPrefix(c, scope+"/") {
+			return true
+		}
+	}
+	return false
 }
 
 func cmdIgnore() {
 	if len(os.Args) < 3 {
-		fmt.Fprintf(os.Stderr, "usage: policycheck ignore <policy-id> [--reason <reason>] [--path <pattern>] [--expires <date>]\n")
+		fmt.Fprintf(os.Stderr, "usage: policycheck ignore <policy-id> [--reason <reason>] [--path <dir>] [--expires <date>]\n")
 		os.Exit(1)
 	}
 
@@ -295,8 +310,9 @@ func cmdEvaluate(policiesDir string) {
 	violations := evaluate(ps, hook.ToolName, hook.ToolInput)
 
 	blocked := false
-	for _, v := range violations {
-		if ign := isIgnored(v.ID, ignores, hook.ToolInput.Command, hook.ToolInput.FilePath); ign != nil {
+	for i, v := range violations {
+		if ign := isIgnored(v.ID, ignores, hook.ToolInput); ign != nil {
+			violations[i].Ignored = true
 			fmt.Fprintf(os.Stderr, "IGNORED [%s]: %s (reason: %s, expires: %s)\n", v.ID, v.Msg, ign.Reason, ign.Expires)
 			continue
 		}
@@ -307,6 +323,7 @@ func cmdEvaluate(policiesDir string) {
 			fmt.Fprintf(os.Stderr, "BLOCKED [%s]\n", v.ID)
 		}
 	}
+	writeAudit(hook.ToolName, hook.ToolInput, violations, blocked)
 	if blocked {
 		os.Exit(2)
 	}
