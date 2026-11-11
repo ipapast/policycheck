@@ -35,11 +35,10 @@ See [SECURITY.md](SECURITY.md) for what pattern matching can and can't catch.
 
 ## Quick start
 
-Requires Go 1.24+.
+Requires Go 1.24+ to install.
 
 ```bash
 go install github.com/ipapast/cedar-policies/cmd/policycheck@latest
-git clone https://github.com/ipapast/cedar-policies.git
 ```
 
 `go install` puts `policycheck` in `~/go/bin/`. Make sure it's on your PATH:
@@ -48,7 +47,7 @@ git clone https://github.com/ipapast/cedar-policies.git
 export PATH=$PATH:$(go env GOPATH)/bin
 ```
 
-The binary does not embed the policies, so you need the clone too. Point the hook at its `policies/` directory.
+The default policies are compiled into the binary, so that one file is all you need. No clone, no policies directory.
 
 ### Claude Code
 
@@ -63,7 +62,7 @@ Add to your project's `.claude/settings.json`:
         "hooks": [
           {
             "type": "command",
-            "command": "policycheck /path/to/cedar-policies/policies"
+            "command": "policycheck"
           }
         ]
       }
@@ -72,14 +71,46 @@ Add to your project's `.claude/settings.json`:
 }
 ```
 
-Use an absolute path to the `policies/` directory in your clone. If the binary can't load the policies or can't parse its input, it exits 2 and blocks the tool call (fail closed), so a wrong path shows up immediately instead of silently disabling the guardrails.
+If the binary can't load policies or can't parse its input, it exits 2 and blocks the tool call (fail closed), so a mistake shows up immediately instead of silently disabling the guardrails.
+
+### Custom policies
+
+Pass a directory to use your own policies instead of the built-in ones:
+
+```bash
+git clone https://github.com/ipapast/cedar-policies.git
+policycheck /path/to/cedar-policies/policies
+```
+
+A directory replaces the built-in set entirely (it is not merged), so start from a copy of `policies/` and edit it. Policies are embedded from `policies/` at build time, so changes to the repo only reach the built-in set after you rebuild or reinstall.
+
+### Dev containers and other sandboxes
+
+Because the binary is static and self-contained, it works inside a container with no Go toolchain and no copy of this repo. Claude Code and its hooks run in the same container, so the policies apply there too.
+
+Build the binary in a throwaway stage and copy it in:
+
+```dockerfile
+FROM golang:1.24 AS policycheck
+RUN CGO_ENABLED=0 go install github.com/ipapast/cedar-policies/cmd/policycheck@latest
+
+FROM mcr.microsoft.com/devcontainers/base:ubuntu
+COPY --from=policycheck /go/bin/policycheck /usr/local/bin/policycheck
+```
+
+Then use `"command": "policycheck"` in the project's `.claude/settings.json`, as above. A few things to know:
+
+- **Settings live in your repo.** The hook config is only as trustworthy as the files the agent can edit. `TOOL-006` blocks edits to agent settings, but keep the binary somewhere the agent can't write (`/usr/local/bin` owned by root, as above).
+- **Ignores and the audit log** use the container's filesystem. `.cedar-ignores.json` is read from the working directory. Point `POLICYCHECK_AUDIT_LOG` at a mounted volume if you want the log to outlive the container.
+- **Cross-compiling** works too, for example `CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build ./cmd/policycheck`, if you build on a Mac and run in a Linux container.
+- **It is not isolation.** The container is your boundary. These policies are a check inside it.
 
 ### Other agents (untested)
 
 If your agent can run a command before each tool call and treat exit code 2 as "block", you can try piping tool calls to it as JSON. Tool names and input fields need to match Claude Code's (`Bash`, `Read`, `WebFetch`, ...), so other agents will probably need a small adapter:
 
 ```bash
-echo '{"tool_name":"Bash","tool_input":{"command":"rm -rf /"}}' | ./policycheck ./policies
+echo '{"tool_name":"Bash","tool_input":{"command":"rm -rf /"}}' | policycheck
 # exit 2 = blocked, exit 0 = allowed
 ```
 
@@ -171,11 +202,13 @@ It still cannot see through variable expansion, `eval`, base64-encoded payloads,
 
 ```bash
 # Should block
-echo '{"tool_name":"Bash","tool_input":{"command":"rm -rf /tmp/test"}}' | ./policycheck ./policies
+echo '{"tool_name":"Bash","tool_input":{"command":"rm -rf /tmp/test"}}' | policycheck
 
 # Should allow
-echo '{"tool_name":"Bash","tool_input":{"command":"go test ./..."}}' | ./policycheck ./policies
+echo '{"tool_name":"Bash","tool_input":{"command":"go test ./..."}}' | policycheck
 ```
+
+These use the built-in policies. When you are editing policies in a clone, pass the directory so you test your edits: `policycheck ./policies`.
 
 ## Context fields
 
@@ -216,19 +249,19 @@ You can temporarily suppress a policy per project. Default expiry is 1 week.
 
 ```bash
 # Ignore a policy
-./policycheck ignore CMD-001 --reason "cleanup script needs rm -rf"
+policycheck ignore CMD-001 --reason "cleanup script needs rm -rf"
 
 # Ignore only for a specific path
-./policycheck ignore CMD-001 --reason "cleanup script" --path "/tmp"
+policycheck ignore CMD-001 --reason "cleanup script" --path "/tmp"
 
 # Ignore with custom expiry
-./policycheck ignore CMD-001 --reason "migration" --expires 2026-04-01
+policycheck ignore CMD-001 --reason "migration" --expires 2026-04-01
 
 # List active ignores
-./policycheck list-ignores
+policycheck list-ignores
 
 # Remove an ignore
-./policycheck unignore CMD-001
+policycheck unignore CMD-001
 ```
 
 Ignoring a policy also ignores its lettered variants, so `ignore DATA-002` covers `DATA-002b` (the Bash version of the same rule).
@@ -278,6 +311,7 @@ To use a new `tool_input` field in Cedar context, add it to the `toolInput` stru
 
 ```
 cedar-policies/
+  policies.go          # embeds policies/ into the binary
   cmd/policycheck/
     main.go            # hook binary, ignores
     eval.go            # command normalization and evaluation

@@ -129,3 +129,63 @@ func TestAuditLogRecordsIgnoredAndNeverChangesDecision(t *testing.T) {
 		t.Errorf("unwritable audit log must not change the decision, exit = %d", code)
 	}
 }
+
+// The binary must work on its own (e.g. copied into a dev container) with no
+// policies directory, no clone and no Go toolchain: defaults are embedded.
+func TestEmbeddedPoliciesWorkWithoutDirectory(t *testing.T) {
+	bin := buildBinary(t)
+	standalone := filepath.Join(t.TempDir(), "policycheck")
+	data, err := os.ReadFile(bin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(standalone, data, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	run := func(stdin string) int {
+		cmd := exec.Command(standalone)
+		cmd.Dir = t.TempDir()
+		cmd.Env = []string{"PATH=/nonexistent"}
+		cmd.Stdin = strings.NewReader(stdin)
+		err := cmd.Run()
+		if err == nil {
+			return 0
+		}
+		if ee, ok := err.(*exec.ExitError); ok {
+			return ee.ExitCode()
+		}
+		t.Fatal(err)
+		return -1
+	}
+
+	if got := run(`{"tool_name":"Bash","tool_input":{"command":"rm -rf /opt"}}`); got != 2 {
+		t.Errorf("blocked call exit = %d, want 2", got)
+	}
+	if got := run(`{"tool_name":"Bash","tool_input":{"command":"ls"}}`); got != 0 {
+		t.Errorf("allowed call exit = %d, want 0", got)
+	}
+	if got := run(`garbage`); got != 2 {
+		t.Errorf("bad input must still fail closed, exit = %d, want 2", got)
+	}
+}
+
+func TestEmbeddedPoliciesMatchDisk(t *testing.T) {
+	embedded, err := loadEmbeddedPolicies()
+	if err != nil {
+		t.Fatal(err)
+	}
+	disk, err := loadPolicies("../../policies")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var e, d int
+	for range embedded.All() {
+		e++
+	}
+	for range disk.All() {
+		d++
+	}
+	if e != d || e == 0 {
+		t.Errorf("embedded has %d policies, disk has %d", e, d)
+	}
+}

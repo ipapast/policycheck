@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/cedar-policy/cedar-go"
+	cedarpolicies "github.com/ipapast/cedar-policies"
 )
 
 type hookInput struct {
@@ -27,7 +29,11 @@ type ignoreEntry struct {
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Fprintf(os.Stderr, "usage: policycheck <policies-dir>\n")
+		if stdinIsPiped() {
+			cmdEvaluate("")
+			return
+		}
+		fmt.Fprintf(os.Stderr, "usage: policycheck [policies-dir]    (reads a hook JSON from stdin; uses the built-in policies when no directory is given)\n")
 		fmt.Fprintf(os.Stderr, "       policycheck ignore <policy-id> [--reason <reason>] [--path <dir>] [--expires <date>]\n")
 		fmt.Fprintf(os.Stderr, "       policycheck list-ignores\n")
 		fmt.Fprintf(os.Stderr, "       policycheck unignore <policy-id>\n")
@@ -46,6 +52,11 @@ func main() {
 	default:
 		cmdEvaluate(os.Args[1])
 	}
+}
+
+func stdinIsPiped() bool {
+	info, err := os.Stdin.Stat()
+	return err == nil && info.Mode()&os.ModeCharDevice == 0
 }
 
 func ignoresPath() string {
@@ -299,7 +310,12 @@ func cmdEvaluate(policiesDir string) {
 		os.Exit(2)
 	}
 
-	ps, err := loadPolicies(policiesDir)
+	var ps *cedar.PolicySet
+	if policiesDir == "" {
+		ps, err = loadEmbeddedPolicies()
+	} else {
+		ps, err = loadPolicies(policiesDir)
+	}
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to load policies: %v\n", err)
 		os.Exit(2)
@@ -330,18 +346,29 @@ func cmdEvaluate(policiesDir string) {
 }
 
 func loadPolicies(dir string) (*cedar.PolicySet, error) {
+	if _, err := os.Stat(dir); err != nil {
+		return nil, err
+	}
+	return loadPolicyFS(os.DirFS(dir), ".", dir)
+}
+
+func loadEmbeddedPolicies() (*cedar.PolicySet, error) {
+	return loadPolicyFS(cedarpolicies.FS, "policies", "embedded policies")
+}
+
+func loadPolicyFS(fsys fs.FS, root, label string) (*cedar.PolicySet, error) {
 	ps := cedar.NewPolicySet()
 	found := 0
 
-	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+	err := fs.WalkDir(fsys, root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		if info.IsDir() || filepath.Ext(path) != ".cedar" {
+		if d.IsDir() || filepath.Ext(path) != ".cedar" {
 			return nil
 		}
 
-		data, err := os.ReadFile(path)
+		data, err := fs.ReadFile(fsys, path)
 		if err != nil {
 			return fmt.Errorf("read %s: %w", path, err)
 		}
@@ -368,7 +395,7 @@ func loadPolicies(dir string) (*cedar.PolicySet, error) {
 		return nil, err
 	}
 	if found == 0 {
-		return nil, fmt.Errorf("no .cedar files found in %s", dir)
+		return nil, fmt.Errorf("no .cedar files found in %s", label)
 	}
 
 	return ps, nil
