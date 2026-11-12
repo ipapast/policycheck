@@ -3,3 +3,5 @@
 .vscode/
 .cursor/
 .cedar-ignores.json
+
+/dist/

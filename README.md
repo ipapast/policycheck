@@ -45,6 +45,8 @@ By default, `go install` puts `policycheck` in `~/go/bin/`. Add your Go binary d
 export PATH=$PATH:$(go env GOPATH)/bin
 ```
 
+Or download a prebuilt binary for Linux or macOS (amd64 or arm64) from the [Releases page](https://github.com/ipapast/cedar-policies/releases), make it executable, and put it on your `PATH`.
+
 ### Claude Code
 
 Add the hook to your project's `.claude/settings.json`:

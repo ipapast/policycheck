@@ -65,3 +65,20 @@ Allowed calls that matched nothing are not logged. The file is created with mode
 ## Versions
 
 `policycheck --version` prints the version. Binaries installed with `go install ...@v1.2.3` report that tag; builds from a checkout report a commit-based version (or `dev` outside a git checkout). Pass `-ldflags "-X main.version=..."` to set one explicitly.
+
+## Releases
+
+Each release has static binaries for Linux and macOS on amd64 and arm64, named `policycheck_<os>_<arch>`, plus a `checksums.txt`. The version reported by `policycheck --version` is the release tag.
+
+Maintainers: pushing a tag starts the release workflow, which runs the tests and then [GoReleaser](https://goreleaser.com/) (config in `.goreleaser.yml`).
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+To dry-run the build locally without publishing anything:
+
+```bash
+goreleaser release --snapshot --clean
+```

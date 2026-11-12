@@ -2,7 +2,17 @@
 
 Because the binary is static and self-contained, it works inside a container with no Go toolchain and no copy of this repo. Claude Code and its hooks run in the same container, so the policies apply there too.
 
-Build the binary in a throwaway stage and copy it in:
+The simplest way is to download a release binary. Pin a release tag (`vX.Y.Z`) so builds are reproducible. `TARGETARCH` is `amd64` or `arm64`, which matches the release asset names:
+
+```dockerfile
+FROM mcr.microsoft.com/devcontainers/base:ubuntu
+ARG TARGETARCH
+ADD --chmod=755 https://github.com/ipapast/cedar-policies/releases/download/vX.Y.Z/policycheck_linux_${TARGETARCH} /usr/local/bin/policycheck
+```
+
+Each release also has a `checksums.txt` if you want to verify the download.
+
+Or build the binary in a throwaway stage and copy it in:
 
 ```dockerfile
 FROM golang:1.24 AS policycheck
