@@ -6,7 +6,7 @@ Build the binary in a throwaway stage and copy it in:
 
 ```dockerfile
 FROM golang:1.24 AS policycheck
-RUN CGO_ENABLED=0 go install github.com/ipapast/cedar-policies/cmd/policycheck@latest
+RUN CGO_ENABLED=0 go install github.com/ipapast/policycheck/cmd/policycheck@latest
 
 FROM mcr.microsoft.com/devcontainers/base:ubuntu
 COPY --from=policycheck /go/bin/policycheck /usr/local/bin/policycheck

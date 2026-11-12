@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/cedar-policy/cedar-go"
-	cedarpolicies "github.com/ipapast/cedar-policies"
+	cedarpolicies "github.com/ipapast/policycheck"
 )
 
 type hookInput struct {

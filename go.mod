@@ -1,4 +1,4 @@
-module github.com/ipapast/cedar-policies
+module github.com/ipapast/policycheck
 
 go 1.24.1
 

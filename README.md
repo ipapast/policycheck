@@ -1,8 +1,8 @@
-# cedar-policies
+# policycheck
 
-[![test](https://github.com/ipapast/cedar-policies/actions/workflows/test.yml/badge.svg)](https://github.com/ipapast/cedar-policies/actions/workflows/test.yml)
+[![test](https://github.com/ipapast/policycheck/actions/workflows/test.yml/badge.svg)](https://github.com/ipapast/policycheck/actions/workflows/test.yml)
 
-`cedar-policies` checks tool calls from [Claude Code](https://claude.com/claude-code) and [Codex](https://learn.chatgpt.com/docs/hooks) against [Cedar](https://docs.cedarpolicy.com/) rules before they run. Each rule has an ID, an explanation and tests, so you can see why a call was blocked, add an exception for a project with an expiry date, and keep an audit log of policy matches.
+`policycheck` checks tool calls from [Claude Code](https://claude.com/claude-code) and [Codex](https://learn.chatgpt.com/docs/hooks) against [Cedar](https://docs.cedarpolicy.com/) rules before they run. Each rule has an ID, an explanation and tests, so you can see why a call was blocked, add an exception for a project with an expiry date, and keep an audit log of policy matches.
 
 ```mermaid
 flowchart TD
@@ -36,7 +36,7 @@ The agent invokes `policycheck` through a `PreToolUse` hook, passing a JSON obje
 Install with Go 1.24 or later:
 
 ```bash
-go install github.com/ipapast/cedar-policies/cmd/policycheck@latest
+go install github.com/ipapast/policycheck/cmd/policycheck@latest
 ```
 
 By default, `go install` puts `policycheck` in `~/go/bin/`. Add your Go binary directory to `PATH` so the hook can find it:

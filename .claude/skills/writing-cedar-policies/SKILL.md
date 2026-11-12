@@ -1,6 +1,6 @@
 ---
 name: writing-cedar-policies
-description: Write and test Cedar security policies for AI agent tool-use guardrails. Use when creating, modifying, or reviewing Cedar policy files in the cedar-policies repository.
+description: Write and test Cedar security policies for AI agent tool-use guardrails. Use when creating, modifying, or reviewing Cedar policy files in the policycheck repository.
 ---
 
 # Writing Cedar Policies

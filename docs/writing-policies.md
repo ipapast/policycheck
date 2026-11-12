@@ -101,7 +101,7 @@ Add a failing test case first, then the policy that makes it pass:
 ## Files
 
 ```
-cedar-policies/
+policycheck/
   policies.go          # embeds policies/ into the binary
   cmd/policycheck/
     main.go            # hook binary, ignores

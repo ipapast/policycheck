@@ -1,6 +1,6 @@
 # Security
 
-cedar-policies is a guardrail, not a sandbox. Rules are pattern matches on the command string or file path the agent sends, so a determined or creative agent can get around them (extra whitespace, quoting, variable expansion, scripts that do the dangerous thing indirectly, and so on). Use it to catch mistakes and obvious bad behavior, and pair it with real isolation (containers, least-privilege credentials) for anything that matters.
+policycheck is a guardrail, not a sandbox. Rules are pattern matches on the command string or file path the agent sends, so a determined or creative agent can get around them (extra whitespace, quoting, variable expansion, scripts that do the dangerous thing indirectly, and so on). Use it to catch mistakes and obvious bad behavior, and pair it with real isolation (containers, least-privilege credentials) for anything that matters.
 
 ## Reporting a vulnerability
 
