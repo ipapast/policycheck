@@ -2,11 +2,11 @@
 
 [![test](https://github.com/ipapast/cedar-policies/actions/workflows/test.yml/badge.svg)](https://github.com/ipapast/cedar-policies/actions/workflows/test.yml)
 
-Tested, named security guardrails for [Claude Code](https://claude.com/claude-code), written as [Cedar](https://docs.cedarpolicy.com/) policies.
+Tested, named security guardrails for [Claude Code](https://claude.com/claude-code) and [Codex](https://learn.chatgpt.com/docs/hooks), written as [Cedar](https://docs.cedarpolicy.com/) policies.
 
 Claude Code's built-in permission rules decide what to allow. cedar-policies adds a layer on top: every rule has a stable ID and message, ships with unit tests, can be ignored per project with an expiry, and every block or ignore can be written to an audit log. It runs as a `PreToolUse` hook and covers Bash, file tools, Glob/Grep and WebFetch.
 
-It is built for Claude Code. The stdin JSON interface is small, so adapting it to other agents is possible, but only Claude Code is tested today.
+Tested with Claude Code and with Codex CLI for shell-command hooks. Codex sends shell calls in the same `Bash` hook format, so the shell policies work without an adapter. Codex file edits and other tools need additional coverage; see [Codex](#codex) for the setup and tested scope.
 
 This is a starting point. The rules cover common mistakes and obvious bad behavior, and they are meant to be read, changed and extended for your own setup.
 
@@ -37,7 +37,7 @@ The input is a JSON object with `tool_name` and `tool_input` fields, in Claude C
 
 ## Use it with the built-in permissions and the sandbox
 
-This is one layer, not the whole defense:
+This is one layer, not the whole defense. The permission settings and sandbox details below describe Claude Code; keep Codex's own permissions and sandbox enabled too:
 
 - **Permission rules** (`permissions.allow/ask/deny` in `settings.json`) are the first line. Keep using them. Their matching on command arguments is documented as fragile, which is where extra policies help.
 - **Hooks like this one** can inspect the full tool input, for example a URL inside a Bash command, or Glob and Grep targets. A blocked call is stopped even if a permission rule would have allowed it.
@@ -86,6 +86,40 @@ Add to your project's `.claude/settings.json`:
 
 If the binary can't load policies or can't parse its input, it exits 2 and blocks the tool call (fail closed), so a mistake shows up immediately instead of silently disabling the guardrails.
 
+### Codex
+
+Add this to `~/.codex/hooks.json` for all projects, or `<repo>/.codex/hooks.json` for one project:
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "policycheck"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+If `policycheck` is not on Codex's PATH, use its absolute path in `command`, for example `/Users/you/go/bin/policycheck`. Review and trust the hook through `/hooks` in the CLI or **Settings → Hooks** in the desktop app. Project-local hooks also require a trusted project. See the [Codex hooks documentation](https://learn.chatgpt.com/docs/hooks).
+
+Codex reports shell calls, including `exec_command`, as `tool_name: "Bash"` with `tool_input.command`. It honors exit code 2 and displays the policy's blocking reason. The configuration above intentionally covers shell calls only.
+
+Tested with Codex CLI **0.167.0 on macOS**:
+
+- A harmless `printf` ran successfully.
+- `git push --force origin cedar-audit-test` was blocked by `TOOL-001` in a disposable directory with no Git repository or remote.
+- With `POLICYCHECK_AUDIT_LOG` set for the hook, the blocked call was recorded in the built-in JSONL [audit log](#audit-log). The harmless call was not logged, as designed.
+
+This verifies shell hook integration and block logging, not every policy or the desktop app. Codex's `apply_patch` supplies patch text instead of Claude's `Write`/`Edit` and `file_path`, so the existing file-edit rules do not cover it. The policies also need Codex configuration paths and matching MCP tool names before claiming equivalent coverage across agents. Tests against representative `apply_patch` inputs confirmed that workflow edits currently pass.
+
 ### Custom policies
 
 Pass a directory to use your own policies instead of the built-in ones:
@@ -120,7 +154,7 @@ Then use `"command": "policycheck"` in the project's `.claude/settings.json`, as
 
 ### Other agents (untested)
 
-If your agent can run a command before each tool call and treat exit code 2 as "block", you can try piping tool calls to it as JSON. Tool names and input fields need to match Claude Code's (`Bash`, `Read`, `WebFetch`, ...), so other agents will probably need a small adapter:
+If your agent can run a command before each tool call and treat exit code 2 as "block", you can try piping tool calls to it as JSON. Beyond the tested Codex shell integration above, tool names and input fields need to match Claude Code's (`Bash`, `Read`, `WebFetch`, ...), so other agents will probably need a small adapter:
 
 ```bash
 echo '{"tool_name":"Bash","tool_input":{"command":"rm -rf /"}}' | policycheck
