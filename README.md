@@ -2,19 +2,23 @@
 
 [![test](https://github.com/ipapast/cedar-policies/actions/workflows/test.yml/badge.svg)](https://github.com/ipapast/cedar-policies/actions/workflows/test.yml)
 
-Tested, named security guardrails for [Claude Code](https://claude.com/claude-code) and [Codex](https://learn.chatgpt.com/docs/hooks), written as [Cedar](https://docs.cedarpolicy.com/) policies.
+`cedar-policies` checks tool calls from [Claude Code](https://claude.com/claude-code) and [Codex](https://learn.chatgpt.com/docs/hooks) against [Cedar](https://docs.cedarpolicy.com/) rules before they run. Each rule has an ID, an explanation and tests, so you can see why a call was blocked, add an exception for a project with an expiry date, and keep an audit log of policy matches.
 
-Claude Code's built-in permission rules decide what to allow. cedar-policies adds a layer on top: every rule has a stable ID and message, ships with unit tests, can be ignored per project with an expiry, and every block or ignore can be written to an audit log. It runs as a `PreToolUse` hook and covers Bash, file tools, Glob/Grep and WebFetch.
+```mermaid
+flowchart TD
+    A["Claude Code or Codex requests a tool call"]
+    A --> B["PreToolUse hook"]
+    B --> C["policycheck checks Cedar rules and active ignores"]
+    C --> D{"Allowed?"}
+    D -->|Yes: exit 0| E["Tool runs"]
+    D -->|No: exit 2| F["Tool blocked with policy ID and reason"]
+```
 
-Tested with Claude Code and with Codex CLI for shell commands and native `apply_patch` edits. Patch targets are checked against the existing `Write` and `Edit` policies; see [Codex](#codex) for setup and tested scope.
+The rules cover Claude Code's shell, file, search and fetch tools, and have also been tested with Codex CLI shell commands and native `apply_patch` edits. For a patch, every affected file is checked before any changes are made. MCP rules depend on the tool names and hook configuration; the [agent guide](docs/agents.md) describes the tested coverage.
 
-This is a starting point. The rules cover common mistakes and obvious bad behavior, and they are meant to be read, changed and extended for your own setup.
+## What it checks
 
-## What it helps with
-
-An agent with shell and file access can do real damage from one bad step. A prompt injection hidden in a README or a web page might tell it to "clean up" with `rm -rf`, "debug" by reading `~/.aws/credentials`, or "check connectivity" by calling the cloud metadata endpoint. A plain mistake can do the same thing without any attacker.
-
-These policies sit in front of every tool call and stop the common cases:
+The included policies cover operations that are easy to get wrong during coding, whether through a mistake or a prompt injection in a file the agent reads:
 
 - **Destructive commands:** `rm -rf` on broad paths, `sudo`, `chmod 777`, disk tools, `kill -9`
 - **Secrets:** SSH and cloud credentials, `.env` files, `credentials.json`, `.npmrc`, kubeconfig, private keys, environment dumps
@@ -23,47 +27,27 @@ These policies sit in front of every tool call and stop the common cases:
 
 ## How it works
 
-```
-Agent tool call
-  -> pre-execution hook fires
-  -> policycheck reads JSON from stdin
-  -> evaluates Cedar policies
-  -> exit 0 (allow) or exit 2 (block with ID + message)
-```
+The agent invokes `policycheck` through a `PreToolUse` hook, passing a JSON object with `tool_name` and `tool_input` on stdin. The checker evaluates the policies and project ignores, then returns exit code 0 to allow the call or exit code 2 to block it with a policy ID and explanation. When audit logging is enabled, it records matching rules, including violations allowed by an ignore.
 
-The input is a JSON object with `tool_name` and `tool_input` fields, in Claude Code's hook format.
-
-`policycheck` is a single static binary. It needs no network, no daemon and no credentials, and it only reads the policy files you point it at and (optionally) writes an audit log.
-
-## Use it with the built-in permissions and the sandbox
-
-This is one layer, not the whole defense. The permission settings and sandbox details below describe Claude Code; keep Codex's own permissions and sandbox enabled too:
-
-- **Permission rules** (`permissions.allow/ask/deny` in `settings.json`) are the first line. Keep using them. Their matching on command arguments is documented as fragile, which is where extra policies help.
-- **Hooks like this one** can inspect the full tool input, for example a URL inside a Bash command, or Glob and Grep targets. A blocked call is stopped even if a permission rule would have allowed it.
-- **The sandbox** is the only layer that enforces limits at the OS level, and it covers Bash only. Hooks run outside it, so enable the sandbox for anything that matters and treat these policies as an additional check, not a replacement.
-
-See [SECURITY.md](SECURITY.md) for what pattern matching can and can't catch.
+`policycheck` is a standalone static binary with the default policies embedded, so it can run without a Go installation or network connection once built. You can [supply your own policy directory](docs/usage.md#custom-policies) to adapt the rules to your project.
 
 ## Quick start
 
-Requires Go 1.24+ to install.
+Install with Go 1.24 or later:
 
 ```bash
 go install github.com/ipapast/cedar-policies/cmd/policycheck@latest
 ```
 
-`go install` puts `policycheck` in `~/go/bin/`. Make sure it's on your PATH:
+By default, `go install` puts `policycheck` in `~/go/bin/`. Add your Go binary directory to `PATH` so the hook can find it:
 
 ```bash
 export PATH=$PATH:$(go env GOPATH)/bin
 ```
 
-The default policies are compiled into the binary, so that one file is all you need. No clone, no policies directory.
-
 ### Claude Code
 
-Add to your project's `.claude/settings.json`:
+Add the hook to your project's `.claude/settings.json`:
 
 ```json
 {
@@ -83,7 +67,7 @@ Add to your project's `.claude/settings.json`:
 }
 ```
 
-If the binary can't load policies or can't parse its input, it exits 2 and blocks the tool call (fail closed), so a mistake shows up immediately instead of silently disabling the guardrails.
+If `policycheck` cannot load its policies or parse the hook input, it returns exit code 2 and blocks the call with an error message.
 
 ### Codex
 
@@ -109,7 +93,7 @@ Add this to `~/.codex/hooks.json` for all projects, or `<repo>/.codex/hooks.json
 
 If `policycheck` is not on Codex's PATH, use its absolute path in `command`, for example `/Users/you/go/bin/policycheck`. Review and trust the hook through `/hooks` in the CLI or **Settings → Hooks** in the desktop app. Project-local hooks also require a trusted project. See the [Codex hooks documentation](https://learn.chatgpt.com/docs/hooks).
 
-Tested scope and caveats are in [docs/agents.md](docs/agents.md). To run it in a dev container, see [docs/dev-containers.md](docs/dev-containers.md). To use your own policies, see [docs/usage.md](docs/usage.md#custom-policies).
+The [agent guide](docs/agents.md) covers test results, MCP configuration and coverage limits. There are also instructions for [dev containers](docs/dev-containers.md), [custom policies](docs/usage.md#custom-policies), [temporary exceptions](docs/usage.md#ignoring-policies) and [audit logging](docs/usage.md#audit-log).
 
 ## Included policies
 
@@ -149,17 +133,15 @@ Tested scope and caveats are in [docs/agents.md](docs/agents.md). To run it in a
 | `TOOL-012` | cdk deploy/destroy |
 | `TOOL-013` | destructive psql commands (DROP, TRUNCATE) |
 
-Policies in `examples/` are not loaded by default. They need a tweak for your setup (for example `TOOL-008` restricts `git push` to one GitHub account, so set your own username and copy it into `policies/`).
+The `examples/` directory contains policies that need project-specific values before use. For example, `TOOL-008` restricts `git push` to a GitHub account; set the account name and include the file in your custom policy directory to enable it.
 
 </details>
 
 ## Limitations
 
-This is a guardrail, not a sandbox. Rules are glob matches on the command string or file path, not a parse of what the shell will actually do.
+The rules match patterns in tool inputs, so their coverage depends on how an operation is expressed. The checker normalizes common shell wrappers, whitespace and recursive `rm` flags, and checks segments of chained commands, but it does not fully parse or execute the shell to determine what a command will do.
 
-To make that harder to dodge, Bash commands are checked in several forms: as typed, with whitespace collapsed, and split into sub-commands (`;`, `&&`, `||`, `|`, newlines, `$(...)`, backticks). Leading env assignments and wrappers like `nohup`, `exec` and `env` are stripped, `/bin/rm` and `\rm` are treated as `rm`, and any recursive `rm` (`-r`, `-R`, `-fr`, `--recursive`) is rewritten to `rm -rf`. If several policies match, all of them are reported.
-
-It still cannot see through variable expansion, `eval`, base64-encoded payloads, scripts that do the dangerous thing internally, or `cd` followed by relative paths. Named git remotes are not resolved. Treat the policies as a safety net for mistakes and obvious bad behavior, and use real isolation for anything critical. See [SECURITY.md](SECURITY.md).
+Variable expansion, `eval`, encoded payloads, commands inside scripts and relative paths after `cd` can escape those checks. Named Git remotes are not resolved, and file writes through shell scripts are outside the patch adapter. Keep the agent's permissions and sandbox enabled to restrict filesystem and network access; [SECURITY.md](SECURITY.md) explains the limits of the policy checks.
 
 ## Documentation
 
