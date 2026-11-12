@@ -7,7 +7,7 @@ The simplest way is to download a release binary. Pin a release tag (`vX.Y.Z`) s
 ```dockerfile
 FROM mcr.microsoft.com/devcontainers/base:ubuntu
 ARG TARGETARCH
-ADD --chmod=755 https://github.com/ipapast/cedar-policies/releases/download/vX.Y.Z/policycheck_linux_${TARGETARCH} /usr/local/bin/policycheck
+ADD --chmod=755 https://github.com/ipapast/policycheck/releases/download/vX.Y.Z/policycheck_linux_${TARGETARCH} /usr/local/bin/policycheck
 ```
 
 Each release also has a `checksums.txt` if you want to verify the download.
