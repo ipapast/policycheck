@@ -28,5 +28,29 @@
     "tool_name": "Edit",
     "tool_input": {"file_path": "/Users/me/project/main.go"},
     "expect": "allow"
+  },
+  {
+    "name": "blocks editing Codex hook config",
+    "tool_name": "Edit",
+    "tool_input": {"file_path": "/Users/me/project/.codex/hooks.json"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks writing Codex user config",
+    "tool_name": "Write",
+    "tool_input": {"file_path": "/Users/me/.codex/config.toml"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks editing Codex hook scripts",
+    "tool_name": "Edit",
+    "tool_input": {"file_path": "/Users/me/.codex/hooks/check.py"},
+    "expect": "block"
+  },
+  {
+    "name": "allows unrelated Codex project file",
+    "tool_name": "Write",
+    "tool_input": {"file_path": "/Users/me/project/codex-example.txt"},
+    "expect": "allow"
   }
 ]

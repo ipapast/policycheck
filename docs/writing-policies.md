@@ -67,6 +67,8 @@ The hook input is mapped to Cedar context:
 
 Fields are only present when the tool sends them, so guard optional ones with `context has path && ...` in a rule that can match several tools.
 
+For Codex `apply_patch`, each affected file is additionally evaluated as both `Write` and `Edit`, with an absolute `context.file_path`. Existing symlinks are resolved and checked too. See [Codex file edits](agents.md#file-edits).
+
 Action is the tool name: `Action::"Bash"`, `Action::"Read"`, `Action::"Write"`, `Action::"mcp__slack__slack_post_message"`, etc.
 
 Every policy ships with a `*_test.json` file next to it listing tool calls and whether they should be blocked or allowed. Run them all with:
@@ -105,6 +107,7 @@ cedar-policies/
     main.go            # hook binary, ignores
     eval.go            # command normalization and evaluation
     audit.go           # audit log and version
+    patch.go           # Codex patch targets and file-policy checks
     main_test.go       # test runner (loads *_test.json files)
     *_test.go          # exit codes, audit log, ignores, embedded policies
   examples/            # policies that need customizing before use

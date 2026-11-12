@@ -17,6 +17,7 @@ import (
 type hookInput struct {
 	ToolName  string    `json:"tool_name"`
 	ToolInput toolInput `json:"tool_input"`
+	Cwd       string    `json:"cwd"`
 }
 
 type ignoreEntry struct {
@@ -324,10 +325,25 @@ func cmdEvaluate(policiesDir string) {
 	ignores, _ := loadIgnores() // ignore errors, just evaluate without ignores
 
 	violations := evaluate(ps, hook.ToolName, hook.ToolInput)
+	if hook.ToolName == "apply_patch" {
+		patchViolations, err := evaluatePatch(ps, hook.Cwd, hook.ToolInput.Command)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to check apply_patch: %v\n", err)
+			os.Exit(2)
+		}
+		violations = append(violations, patchViolations...)
+		ignores = patchIgnores(hook.Cwd, ignores)
+	}
 
 	blocked := false
 	for i, v := range violations {
-		if ign := isIgnored(v.ID, ignores, hook.ToolInput); ign != nil {
+		ignoreInput := hook.ToolInput
+		if v.FilePath != "" {
+			// A scoped ignore must cover this violation's path, not another
+			// file or a string in the patch body.
+			ignoreInput = toolInput{FilePath: v.FilePath}
+		}
+		if ign := isIgnored(v.ID, ignores, ignoreInput); ign != nil {
 			violations[i].Ignored = true
 			fmt.Fprintf(os.Stderr, "IGNORED [%s]: %s (reason: %s, expires: %s)\n", v.ID, v.Msg, ign.Reason, ign.Expires)
 			continue

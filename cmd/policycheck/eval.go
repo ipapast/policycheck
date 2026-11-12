@@ -18,9 +18,10 @@ type toolInput struct {
 }
 
 type violation struct {
-	ID      string `json:"id"`
-	Msg     string `json:"msg,omitempty"`
-	Ignored bool   `json:"ignored,omitempty"`
+	ID       string `json:"id"`
+	Msg      string `json:"msg,omitempty"`
+	Ignored  bool   `json:"ignored,omitempty"`
+	FilePath string `json:"file_path,omitempty"`
 }
 
 var envAssignment = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*=`)

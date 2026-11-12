@@ -6,7 +6,7 @@ Tested, named security guardrails for [Claude Code](https://claude.com/claude-co
 
 Claude Code's built-in permission rules decide what to allow. cedar-policies adds a layer on top: every rule has a stable ID and message, ships with unit tests, can be ignored per project with an expiry, and every block or ignore can be written to an audit log. It runs as a `PreToolUse` hook and covers Bash, file tools, Glob/Grep and WebFetch.
 
-Tested with Claude Code and with Codex CLI for shell-command hooks. Codex sends shell calls in the same `Bash` hook format, so the shell policies work without an adapter. Codex file edits and other tools need additional coverage; see [Codex](#codex) for the setup and tested scope.
+Tested with Claude Code and with Codex CLI for shell commands and native `apply_patch` edits. Patch targets are checked against the existing `Write` and `Edit` policies; see [Codex](#codex) for setup and tested scope.
 
 This is a starting point. The rules cover common mistakes and obvious bad behavior, and they are meant to be read, changed and extended for your own setup.
 
@@ -94,7 +94,7 @@ Add this to `~/.codex/hooks.json` for all projects, or `<repo>/.codex/hooks.json
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Bash",
+        "matcher": "^(Bash|apply_patch)$",
         "hooks": [
           {
             "type": "command",

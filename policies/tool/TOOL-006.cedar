@@ -7,7 +7,12 @@ forbid (
 ) when {
     context.file_path like "*/.claude/settings.json" ||
     context.file_path like "*/.claude/settings.local.json" ||
-    context.file_path like "*/.claude/SECURITY.md"
+    context.file_path like "*/.claude/SECURITY.md" ||
+    context.file_path like "*/.codex/config.toml" ||
+    context.file_path like "*/.codex/hooks.json" ||
+    context.file_path like "*/.codex/requirements.toml" ||
+    context.file_path like "*/.codex/hooks/*" ||
+    context.file_path like "*/.codex/rules/*"
 };
 
 @id("TOOL-006b")
@@ -19,5 +24,10 @@ forbid (
 ) when {
     context.file_path like "*/.claude/settings.json" ||
     context.file_path like "*/.claude/settings.local.json" ||
-    context.file_path like "*/.claude/SECURITY.md"
+    context.file_path like "*/.claude/SECURITY.md" ||
+    context.file_path like "*/.codex/config.toml" ||
+    context.file_path like "*/.codex/hooks.json" ||
+    context.file_path like "*/.codex/requirements.toml" ||
+    context.file_path like "*/.codex/hooks/*" ||
+    context.file_path like "*/.codex/rules/*"
 };
