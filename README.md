@@ -45,7 +45,6 @@ This is one layer, not the whole defense. The permission settings and sandbox de
 
 See [SECURITY.md](SECURITY.md) for what pattern matching can and can't catch.
 
-
 ## Quick start
 
 Requires Go 1.24+ to install.
@@ -110,71 +109,12 @@ Add this to `~/.codex/hooks.json` for all projects, or `<repo>/.codex/hooks.json
 
 If `policycheck` is not on Codex's PATH, use its absolute path in `command`, for example `/Users/you/go/bin/policycheck`. Review and trust the hook through `/hooks` in the CLI or **Settings → Hooks** in the desktop app. Project-local hooks also require a trusted project. See the [Codex hooks documentation](https://learn.chatgpt.com/docs/hooks).
 
-Codex reports shell calls, including `exec_command`, as `tool_name: "Bash"` with `tool_input.command`. It honors exit code 2 and displays the policy's blocking reason. The configuration above intentionally covers shell calls only.
-
-Tested with Codex CLI **0.167.0 on macOS**:
-
-- A harmless `printf` ran successfully.
-- `git push --force origin cedar-audit-test` was blocked by `TOOL-001` in a disposable directory with no Git repository or remote.
-- With `POLICYCHECK_AUDIT_LOG` set for the hook, the blocked call was recorded in the built-in JSONL [audit log](#audit-log). The harmless call was not logged, as designed.
-
-This verifies shell hook integration and block logging, not every policy or the desktop app. Codex's `apply_patch` supplies patch text instead of Claude's `Write`/`Edit` and `file_path`, so the existing file-edit rules do not cover it. The policies also need Codex configuration paths and matching MCP tool names before claiming equivalent coverage across agents. Tests against representative `apply_patch` inputs confirmed that workflow edits currently pass.
-
-### Custom policies
-
-Pass a directory to use your own policies instead of the built-in ones:
-
-```bash
-git clone https://github.com/ipapast/cedar-policies.git
-policycheck /path/to/cedar-policies/policies
-```
-
-A directory replaces the built-in set entirely (it is not merged), so start from a copy of `policies/` and edit it. Policies are embedded from `policies/` at build time, so changes to the repo only reach the built-in set after you rebuild or reinstall.
-
-### Dev containers and other sandboxes
-
-Because the binary is static and self-contained, it works inside a container with no Go toolchain and no copy of this repo. Claude Code and its hooks run in the same container, so the policies apply there too.
-
-Build the binary in a throwaway stage and copy it in:
-
-```dockerfile
-FROM golang:1.24 AS policycheck
-RUN CGO_ENABLED=0 go install github.com/ipapast/cedar-policies/cmd/policycheck@latest
-
-FROM mcr.microsoft.com/devcontainers/base:ubuntu
-COPY --from=policycheck /go/bin/policycheck /usr/local/bin/policycheck
-```
-
-Then use `"command": "policycheck"` in the project's `.claude/settings.json`, as above. A few things to know:
-
-- **Settings live in your repo.** The hook config is only as trustworthy as the files the agent can edit. `TOOL-006` blocks edits to agent settings, but keep the binary somewhere the agent can't write (`/usr/local/bin` owned by root, as above).
-- **Ignores and the audit log** use the container's filesystem. `.cedar-ignores.json` is read from the working directory. Point `POLICYCHECK_AUDIT_LOG` at a mounted volume if you want the log to outlive the container.
-- **Cross-compiling** works too, for example `CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build ./cmd/policycheck`, if you build on a Mac and run in a Linux container.
-- **It is not isolation.** The container is your boundary. These policies are a check inside it.
-
-### Other agents (untested)
-
-If your agent can run a command before each tool call and treat exit code 2 as "block", you can try piping tool calls to it as JSON. Beyond the tested Codex shell integration above, tool names and input fields need to match Claude Code's (`Bash`, `Read`, `WebFetch`, ...), so other agents will probably need a small adapter:
-
-```bash
-echo '{"tool_name":"Bash","tool_input":{"command":"rm -rf /"}}' | policycheck
-# exit 2 = blocked, exit 0 = allowed
-```
-
-## Cedar 101
-
-Cedar is a policy language by AWS. Every request has a **principal** (who), **action** (what tool), and **resource** (target), plus a **context** with extra data.
-
-- `permit` allows, `forbid` denies - **forbid always wins**
-- If nothing permits a request, it's denied (default-deny)
-- `like` is the only pattern operator: `*` matches any string, no regex
-- All rules are evaluated, not just the first match
-
-Our `base.cedar` permits everything by default. Individual policy files add `forbid` rules that override.
-
-For the full language reference, see the [Cedar docs](https://docs.cedarpolicy.com/).
+Tested scope and caveats are in [docs/agents.md](docs/agents.md). To run it in a dev container, see [docs/dev-containers.md](docs/dev-containers.md). To use your own policies, see [docs/usage.md](docs/usage.md#custom-policies).
 
 ## Included policies
+
+<details>
+<summary>All 30 policies</summary>
 
 | ID | Blocks |
 |---|---|
@@ -211,32 +151,7 @@ For the full language reference, see the [Cedar docs](https://docs.cedarpolicy.c
 
 Policies in `examples/` are not loaded by default. They need a tweak for your setup (for example `TOOL-008` restricts `git push` to one GitHub account, so set your own username and copy it into `policies/`).
 
-## Writing policies
-
-Policies are Cedar files in the `policies/` directory. Each forbid rule needs `@id` and `@msg` annotations:
-
-```cedar
-@id("CMD-001")
-@msg("rm -r/-rf on dangerous paths (/, ~, *) is not allowed")
-forbid (
-    principal is Agent,
-    action == Action::"Bash",
-    resource
-) when {
-    context.command like "rm -rf /*"
-};
-```
-
-### Policy naming
-
-| Prefix | Scope | Examples |
-|---|---|---|
-| `CMD` | Dangerous commands | rm -rf, sudo, chmod 777, find -delete |
-| `DATA` | Secrets and sensitive files | read ~/.ssh, env dump, credentials |
-| `NET` | Network and exfiltration | curl POST, wget pipe, dns tunneling |
-| `TOOL` | Tool-specific controls | MCP tools, package publishing, git force push |
-
-Numbers are sequential within each prefix: `CMD-001`, `CMD-002`, `NET-001`, etc.
+</details>
 
 ## Limitations
 
@@ -246,137 +161,13 @@ To make that harder to dodge, Bash commands are checked in several forms: as typ
 
 It still cannot see through variable expansion, `eval`, base64-encoded payloads, scripts that do the dangerous thing internally, or `cd` followed by relative paths. Named git remotes are not resolved. Treat the policies as a safety net for mistakes and obvious bad behavior, and use real isolation for anything critical. See [SECURITY.md](SECURITY.md).
 
-## Testing policies
+## Documentation
 
-```bash
-# Should block
-echo '{"tool_name":"Bash","tool_input":{"command":"rm -rf /tmp/test"}}' | policycheck
-
-# Should allow
-echo '{"tool_name":"Bash","tool_input":{"command":"go test ./..."}}' | policycheck
-```
-
-These use the built-in policies. When you are editing policies in a clone, pass the directory so you test your edits: `policycheck ./policies`.
-
-## Context fields
-
-The hook input is mapped to Cedar context:
-
-| Field | Source | Example |
-|---|---|---|
-| `context.command` | `tool_input.command` (Bash) | `"rm -rf /tmp"` |
-| `context.file_path` | `tool_input.file_path` (Read/Write/Edit) | `"~/.ssh/id_rsa"` |
-| `context.url` | `tool_input.url` (WebFetch) | `"http://169.254.169.254/"` |
-| `context.path` | `tool_input.path` (Glob/Grep) | `"/Users/me/.ssh"` |
-| `context.pattern` | `tool_input.pattern` (Glob/Grep) | `"**/*.pem"` |
-| `context.glob` | `tool_input.glob` (Grep) | `"*.env"` |
-
-Fields are only present when the tool sends them, so guard optional ones with `context has path && ...` in a rule that can match several tools.
-
-Action is the tool name: `Action::"Bash"`, `Action::"Read"`, `Action::"Write"`, `Action::"mcp__slack__slack_post_message"`, etc.
-
-Every policy ships with a `*_test.json` file next to it listing tool calls and whether they should be blocked or allowed. Run them all with:
-
-```bash
-go test ./...
-```
-
-## Contributing
-
-Add a failing test case first, then the policy that makes it pass:
-
-1. Add cases to `policies/<area>/<ID>_test.json` (or create a new one) with `"expect": "block"` / `"allow"`.
-2. Run `go test ./...` and confirm the new cases fail.
-3. Write or update the `.cedar` file until they pass.
-
-[`.claude/skills/writing-cedar-policies/SKILL.md`](.claude/skills/writing-cedar-policies/SKILL.md) describes this workflow in more detail and is also usable as a Claude Code skill.
-
-## Ignoring policies
-
-You can temporarily suppress a policy per project. Default expiry is 1 week.
-
-```bash
-# Ignore a policy
-policycheck ignore CMD-001 --reason "cleanup script needs rm -rf"
-
-# Ignore only for a specific path
-policycheck ignore CMD-001 --reason "cleanup script" --path "/tmp"
-
-# Ignore with custom expiry
-policycheck ignore CMD-001 --reason "migration" --expires 2026-04-01
-
-# List active ignores
-policycheck list-ignores
-
-# Remove an ignore
-policycheck unignore CMD-001
-```
-
-Ignoring a policy also ignores its lettered variants, so `ignore DATA-002` covers `DATA-002b` (the Bash version of the same rule).
-
-Options: `--reason` (optional), `--path` (scope to calls that touch this directory or something inside it, matched on whole path segments, so `/tmp` covers `/tmp/x` but not `/tmpfoo` or `/home/me/tmp-secrets`), `--expires` (default: 1 week from now).
-
-Ignores are stored in `.cedar-ignores.json` in the current directory. This file is personal and should not be committed. Add it to your project's `.gitignore`:
-
-```
-.cedar-ignores.json
-```
-
-Or to your global gitignore (`git config --global core.excludesfile`) to cover all repos.
-
-When an ignored policy would have blocked, it logs `IGNORED [CMD-001]: ...` to stderr so you still have visibility.
-
-## Audit log
-
-Set `POLICYCHECK_AUDIT_LOG` to a file path and every call that matched a policy is appended as one JSON line, including calls that were allowed only because of an ignore:
-
-```bash
-export POLICYCHECK_AUDIT_LOG=~/.local/state/policycheck/audit.jsonl
-```
-
-```json
-{"time":"2026-03-09T09:43:00Z","tool":"Bash","decision":"block","command":"rm -rf /opt","violations":[{"id":"CMD-001","msg":"rm -r/-rf on dangerous paths (/, ~, *) is not allowed"}]}
-```
-
-Allowed calls that matched nothing are not logged. The file is created with mode 0600 because commands and paths may contain sensitive values. If the log can't be written, `policycheck` prints a warning and still enforces the policies.
-
-## Versions
-
-`policycheck --version` prints the version. Binaries installed with `go install ...@v1.2.3` report that tag; builds from a checkout report a commit-based version (or `dev` outside a git checkout). Pass `-ldflags "-X main.version=..."` to set one explicitly.
-
-## What else can be checked
-
-Claude Code sends a `tool_name` and `tool_input` for every tool call. Bash (`command`), Read/Write/Edit (`file_path`), WebFetch (`url`) and Glob/Grep (`path`, `pattern`, `glob`) are mapped into the context. Tools you could still write policies for:
-
-- `Agent` - sends `{"prompt": "...", "subagent_type": "..."}` - restrict which subagent types can run
-- `WebSearch` - sends `{"query": "..."}` - restrict search queries
-- `NotebookEdit` - sends `{"notebook_path": "...", ...}` - same concerns as Write but for notebooks
-- MCP tools - any `mcp__*` tool can be matched by action name, with or without checking input fields
-
-To use a new `tool_input` field in Cedar context, add it to the `toolInput` struct and to `buildContext` in `cmd/policycheck/eval.go`. The test runner picks it up automatically.
-
-## Files
-
-```
-cedar-policies/
-  policies.go          # embeds policies/ into the binary
-  cmd/policycheck/
-    main.go            # hook binary, ignores
-    eval.go            # command normalization and evaluation
-    audit.go           # audit log and version
-    main_test.go       # test runner (loads *_test.json files)
-  examples/            # policies that need customizing before use
-  policies/
-    base.cedar         # default permit rules
-    cmd/               # dangerous commands (rm, sudo, chmod, docker, kill)
-    data/              # secrets, credentials, dotfiles
-    net/               # network exfiltration
-    tool/              # git, MCP, CI/CD, package publishing
-  SECURITY.md
-  LICENSE              # Apache-2.0
-  go.mod
-  go.sum
-```
+- [Using policycheck](docs/usage.md) - custom policies, ignoring a policy, audit log, versions
+- [Writing and testing policies](docs/writing-policies.md) - Cedar basics, policy naming, context fields, contributing
+- [Dev containers and other sandboxes](docs/dev-containers.md)
+- [Codex and other agents](docs/agents.md)
+- [SECURITY.md](SECURITY.md) - limits of pattern matching and how to report a bypass
 
 ## License
 
