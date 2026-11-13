@@ -118,5 +118,35 @@
     "tool_name": "Bash",
     "tool_input": {"command": "rm /tmp/file.txt"},
     "expect": "allow"
+  },
+  {
+    "name": "blocks rm -rf / inside bash -c",
+    "tool_name": "Bash",
+    "tool_input": {"command": "bash -c \"rm -rf /\""},
+    "expect": "block"
+  },
+  {
+    "name": "blocks rm -rf ~ inside sh -c with other commands",
+    "tool_name": "Bash",
+    "tool_input": {"command": "sh -c 'cd /tmp && rm -rf ~'"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks rm -rf inside eval",
+    "tool_name": "Bash",
+    "tool_input": {"command": "eval \"rm -rf /\""},
+    "expect": "block"
+  },
+  {
+    "name": "blocks rm -rf inside nested bash -c",
+    "tool_name": "Bash",
+    "tool_input": {"command": "bash -c \"sh -c 'rm -rf /'\""},
+    "expect": "block"
+  },
+  {
+    "name": "allows harmless bash -c",
+    "tool_name": "Bash",
+    "tool_input": {"command": "bash -c \"go test ./...\""},
+    "expect": "allow"
   }
 ]

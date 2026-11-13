@@ -2,25 +2,29 @@
   {
     "name": "blocks reading .env",
     "tool_name": "Read",
-    "tool_input": {"file_path": "/Users/me/project/.env"},
+    "tool_input": {
+      "file_path": "/Users/me/project/.env"},
     "expect": "block"
   },
   {
     "name": "blocks reading .env.production",
     "tool_name": "Read",
-    "tool_input": {"file_path": "/Users/me/project/.env.production"},
+    "tool_input": {
+      "file_path": "/Users/me/project/.env.production"},
     "expect": "block"
   },
   {
     "name": "blocks reading .env.example",
     "tool_name": "Read",
-    "tool_input": {"file_path": "/Users/me/project/.env.example"},
+    "tool_input": {
+      "file_path": "/Users/me/project/.env.example"},
     "expect": "block"
   },
   {
     "name": "allows reading normal config",
     "tool_name": "Read",
-    "tool_input": {"file_path": "/Users/me/project/config.yaml"},
+    "tool_input": {
+      "file_path": "/Users/me/project/config.yaml"},
     "expect": "allow"
   },
   {
@@ -52,5 +56,11 @@
     "tool_name": "Bash",
     "tool_input": {"command": "echo environment"},
     "expect": "allow"
+  },
+  {
+    "name": "blocks cat .env inside sh -c",
+    "tool_name": "Bash",
+    "tool_input": {"command": "sh -c 'cat .env'"},
+    "expect": "block"
   }
 ]

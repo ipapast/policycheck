@@ -35,6 +35,12 @@ var commandWrappers = map[string]bool{
 // evaluated against: the raw command, a whitespace-collapsed copy, and each
 // sub-command (split on ; | & newlines, $( ) and backticks) in canonical form.
 func commandVariants(cmd string) []string {
+	return commandVariantsDepth(cmd, 0)
+}
+
+const maxShellNesting = 4
+
+func commandVariantsDepth(cmd string, depth int) []string {
 	seen := map[string]bool{}
 	var out []string
 	add := func(s string) {
@@ -57,7 +63,94 @@ func commandVariants(cmd string) []string {
 	for _, seg := range segments {
 		add(canonicalSegment(seg))
 	}
+	if depth < maxShellNesting {
+		for _, inner := range innerShellCommands(cmd) {
+			for _, v := range commandVariantsDepth(inner, depth+1) {
+				add(v)
+			}
+		}
+	}
 	return out
+}
+
+var shellNames = map[string]bool{
+	"bash": true, "sh": true, "zsh": true, "dash": true, "ksh": true,
+}
+
+var shellCFlag = regexp.MustCompile(`^-[A-Za-z]*c[A-Za-z]*$`)
+
+// innerShellCommands returns the command strings that cmd hands to another
+// shell: the argument of "bash -c" (and sh, zsh, dash, ksh) and the arguments
+// of "eval". They are evaluated like any other command, so wrapping a command
+// in a shell does not hide it.
+func innerShellCommands(cmd string) []string {
+	words := shellWords(cmd)
+	var out []string
+	for i, w := range words {
+		name := strings.TrimPrefix(w, `\`)
+		name = name[strings.LastIndex(name, "/")+1:]
+		switch {
+		case name == "eval" && i+1 < len(words):
+			out = append(out, strings.Join(words[i+1:], " "))
+		case shellNames[name]:
+			for j := i + 1; j < len(words) && strings.HasPrefix(words[j], "-"); j++ {
+				if shellCFlag.MatchString(words[j]) {
+					if j+1 < len(words) {
+						out = append(out, words[j+1])
+					}
+					break
+				}
+			}
+		}
+	}
+	return out
+}
+
+// shellWords splits s into words the way a shell would for our purposes:
+// quotes group text and are removed, a backslash escapes the next character
+// outside single quotes, and unquoted ; | & ( ) end a word.
+func shellWords(s string) []string {
+	var words []string
+	var cur strings.Builder
+	inWord := false
+	var quote rune
+	flush := func() {
+		if inWord {
+			words = append(words, cur.String())
+			cur.Reset()
+			inWord = false
+		}
+	}
+	rs := []rune(s)
+	for i := 0; i < len(rs); i++ {
+		r := rs[i]
+		switch {
+		case quote != 0:
+			switch {
+			case r == quote:
+				quote = 0
+			case r == '\\' && quote == '"' && i+1 < len(rs):
+				i++
+				cur.WriteRune(rs[i])
+			default:
+				cur.WriteRune(r)
+			}
+		case r == '\'' || r == '"':
+			quote = r
+			inWord = true
+		case r == '\\' && i+1 < len(rs):
+			i++
+			cur.WriteRune(rs[i])
+			inWord = true
+		case r == ' ' || r == '\t' || r == '\n' || r == ';' || r == '|' || r == '&' || r == '(' || r == ')':
+			flush()
+		default:
+			cur.WriteRune(r)
+			inWord = true
+		}
+	}
+	flush()
+	return words
 }
 
 func canonicalSegment(seg string) string {

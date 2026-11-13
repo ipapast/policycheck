@@ -9,5 +9,12 @@ forbid (
     context.command like "git checkout ." ||
     context.command like "git clean -f*" ||
     context.command like "git branch -D *" ||
-    context.command like "git tag -d *"
+    context.command like "git tag -d *" ||
+    context.command like "git checkout -- *" ||
+    context.command like "git restore ." ||
+    context.command like "git restore -- *" ||
+    context.command like "git restore --worktree*" ||
+    context.command like "git restore -W*" ||
+    context.command like "git stash drop*" ||
+    context.command like "git stash clear*"
 };

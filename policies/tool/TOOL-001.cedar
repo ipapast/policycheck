@@ -6,5 +6,9 @@ forbid (
     resource
 ) when {
     context.command like "git push --force*" ||
-    context.command like "git push *--force*"
+    context.command like "git push *--force*" ||
+    context.command like "git push -f*" ||
+    context.command like "git push * -f*" ||
+    context.command like "git push +*" ||
+    context.command like "git push * +*"
 };

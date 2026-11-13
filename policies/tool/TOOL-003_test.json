@@ -46,5 +46,41 @@
     "tool_name": "Bash",
     "tool_input": {"command": "git branch -d merged-branch"},
     "expect": "allow"
+  },
+  {
+    "name": "blocks git checkout -- .",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git checkout -- ."},
+    "expect": "block"
+  },
+  {
+    "name": "blocks git restore .",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git restore ."},
+    "expect": "block"
+  },
+  {
+    "name": "blocks git stash drop",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git stash drop"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks git stash clear",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git stash clear"},
+    "expect": "block"
+  },
+  {
+    "name": "allows git restore --staged",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git restore --staged file.go"},
+    "expect": "allow"
+  },
+  {
+    "name": "allows git stash",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git stash"},
+    "expect": "allow"
   }
 ]

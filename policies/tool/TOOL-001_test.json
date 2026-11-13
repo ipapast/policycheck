@@ -22,5 +22,29 @@
     "tool_name": "Bash",
     "tool_input": {"command": "git push origin feature-branch"},
     "expect": "allow"
+  },
+  {
+    "name": "blocks git push -f",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git push -f origin feature"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks git push origin -f",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git push origin -f feature"},
+    "expect": "block"
+  },
+  {
+    "name": "blocks git push with a + refspec",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git push origin +feature"},
+    "expect": "block"
+  },
+  {
+    "name": "allows a normal push",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git push origin feature"},
+    "expect": "allow"
   }
 ]
