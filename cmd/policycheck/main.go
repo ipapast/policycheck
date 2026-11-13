@@ -338,7 +338,7 @@ func cmdEvaluate(policiesDir string) {
 		ignores = patchIgnores(hook.Cwd, ignores)
 	}
 
-	blocked := false
+	var blocked, asked []violation
 	for i, v := range violations {
 		ignoreInput := hook.ToolInput
 		if v.FilePath != "" {
@@ -351,15 +351,53 @@ func cmdEvaluate(policiesDir string) {
 			fmt.Fprintf(os.Stderr, "IGNORED [%s]: %s (reason: %s, expires: %s)\n", v.ID, v.Msg, ign.Reason, ign.Expires)
 			continue
 		}
-		blocked = true
+		if policyAnnotation(ps, v.ID, "decision") == "ask" {
+			violations[i].Decision = "ask"
+			asked = append(asked, violations[i])
+			continue
+		}
+		blocked = append(blocked, v)
 		if v.Msg != "" {
 			fmt.Fprintf(os.Stderr, "BLOCKED [%s]: %s\n", v.ID, v.Msg)
 		} else {
 			fmt.Fprintf(os.Stderr, "BLOCKED [%s]\n", v.ID)
 		}
 	}
-	writeAudit(hook.ToolName, hook.ToolInput, violations, blocked)
-	if blocked {
+
+	decision := "allow"
+	switch {
+	case len(blocked) > 0:
+		decision = "block"
+	case len(asked) > 0:
+		decision = "ask"
+	}
+	writeAudit(hook.ToolName, hook.ToolInput, violations, decision)
+	switch decision {
+	case "block":
+		os.Exit(2)
+	case "ask":
+		writeAskDecision(asked)
+	}
+}
+
+// writeAskDecision tells Claude Code to prompt the user instead of running or
+// blocking the call. Rules marked @decision("ask") use this.
+func writeAskDecision(asked []violation) {
+	reasons := make([]string, 0, len(asked))
+	for _, v := range asked {
+		if v.Msg != "" {
+			reasons = append(reasons, fmt.Sprintf("[%s] %s", v.ID, v.Msg))
+		} else {
+			reasons = append(reasons, fmt.Sprintf("[%s]", v.ID))
+		}
+	}
+	out := map[string]any{"hookSpecificOutput": map[string]string{
+		"hookEventName":            "PreToolUse",
+		"permissionDecision":       "ask",
+		"permissionDecisionReason": "policycheck: " + strings.Join(reasons, "; "),
+	}}
+	if err := json.NewEncoder(os.Stdout).Encode(out); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to write hook decision: %v\n", err)
 		os.Exit(2)
 	}
 }

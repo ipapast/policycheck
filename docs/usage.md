@@ -60,7 +60,7 @@ export POLICYCHECK_AUDIT_LOG=~/.local/state/policycheck/audit.jsonl
 {"time":"2026-03-09T09:43:00Z","tool":"Bash","decision":"block","command":"rm -rf /opt","violations":[{"id":"CMD-001","msg":"rm -r/-rf on dangerous paths (/, ~, *) is not allowed"}]}
 ```
 
-Allowed calls that matched nothing are not logged. The file is created with mode 0600 because commands and paths may contain sensitive values. If the log can't be written, `policycheck` prints a warning and still enforces the policies.
+The `decision` is `block`, `ask` (a rule marked `@decision("ask")` prompted the user) or `allow` (only because of an ignore). Allowed calls that matched nothing are not logged. The file is created with mode 0600 because commands and paths may contain sensitive values. If the log can't be written, `policycheck` prints a warning and still enforces the policies.
 
 ## Versions
 

@@ -37,16 +37,13 @@ type auditEntry struct {
 // writeAudit appends a JSON line to $POLICYCHECK_AUDIT_LOG for every call that
 // matched at least one policy (blocked, or allowed only because of an ignore).
 // Failures here only warn: logging must never change the decision.
-func writeAudit(toolName string, in toolInput, violations []violation, blocked bool) {
+// decision is "allow", "ask" or "block".
+func writeAudit(toolName string, in toolInput, violations []violation, decision string) {
 	path := os.Getenv("POLICYCHECK_AUDIT_LOG")
 	if path == "" || len(violations) == 0 {
 		return
 	}
 
-	decision := "allow"
-	if blocked {
-		decision = "block"
-	}
 	line, err := json.Marshal(auditEntry{
 		Time:       time.Now().UTC().Format(time.RFC3339),
 		Tool:       toolName,

@@ -40,6 +40,22 @@ forbid (
 
 Numbers are sequential within each prefix: `CMD-001`, `CMD-002`, `NET-001`, etc.
 
+## Asking instead of blocking
+
+By default a matching `forbid` blocks the call. Add `@decision("ask")` to make Claude Code stop and prompt you instead, with the rule ID and message as the reason:
+
+```cedar
+@id("TOOL-020")
+@msg("deleting a GitHub repo needs a human")
+@decision("ask")
+forbid (principal is Agent, action == Action::"Bash", resource)
+when { context.command like "gh repo delete*" };
+```
+
+If a call matches both an `ask` rule and a normal one, it is blocked. Ignores work the same for both kinds. The audit log records `"decision":"ask"`.
+
+This relies on Claude Code's hook output (`permissionDecision: "ask"`). If an agent does not understand that output, the call simply runs, so use `ask` only for agents you have checked, and keep `forbid` for anything that must never happen. Fixtures in `*_test.json` only check allow or block, so a call that matches an `ask` rule counts as "block" there.
+
 ## Testing policies
 
 ```bash
