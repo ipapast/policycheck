@@ -156,7 +156,7 @@ The `examples/` directory contains policies that need project-specific values be
 
 The rules match patterns in tool inputs, so their coverage depends on how an operation is expressed. The checker normalizes common shell wrappers, whitespace and recursive `rm` flags, and checks segments of chained commands, but it does not fully parse or execute the shell to determine what a command will do.
 
-Variable expansion, `eval`, encoded payloads, commands inside scripts and relative paths after `cd` can escape those checks. Named Git remotes are not resolved, and file writes through shell scripts are outside the patch adapter. Keep the agent's permissions and sandbox enabled to restrict filesystem and network access; [SECURITY.md](SECURITY.md) explains the limits of the policy checks.
+The command string given to `bash -c`, `sh -c` and `eval` is checked too, but variable expansion, encoded payloads, commands inside scripts and relative paths after `cd` can escape those checks. Named Git remotes are not resolved, and file writes through shell scripts are outside the patch adapter. Keep the agent's permissions and sandbox enabled to restrict filesystem and network access; [SECURITY.md](SECURITY.md) explains the limits of the policy checks.
 
 ## Documentation
 

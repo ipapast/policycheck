@@ -71,11 +71,14 @@ For Codex `apply_patch`, each affected file is additionally evaluated as both `W
 
 Action is the tool name: `Action::"Bash"`, `Action::"Read"`, `Action::"Write"`, `Action::"mcp__slack__slack_post_message"`, etc.
 
-Every policy ships with a `*_test.json` file next to it listing tool calls and whether they should be blocked or allowed. Run them all with:
+Every policy ships with a `*_test.json` file next to it listing tool calls and whether they should be blocked or allowed. Run them all with the binary, no Go needed:
 
 ```bash
-go test ./...
+policycheck test ./policies    # your own policy directory
+policycheck test               # the built-in policies
 ```
+
+It prints each failing case with its file and exits 1 if any fail, so it works in CI. Inside a clone of this repo, `go test ./...` runs the same fixtures plus the Go tests. A fixture file is a JSON array of `{"name", "tool_name", "tool_input", "expect"}` objects, where `expect` is `"allow"` or `"block"`. Your policy directory needs a permit policy like `policies/base.cedar`, because Cedar denies everything that no `permit` covers.
 
 ## What else can be checked
 

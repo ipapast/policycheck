@@ -4,8 +4,9 @@ package cedarpolicies
 
 import "embed"
 
-// FS holds the default *.cedar files under "policies/". Test fixtures and
-// examples/ are not embedded.
+// FS holds the default *.cedar files and their *_test.json fixtures under
+// "policies/", so "policycheck test" can check the built-in policies. examples/
+// is not embedded.
 //
-//go:embed policies/*.cedar policies/*/*.cedar
+//go:embed policies/*.cedar policies/*/*.cedar policies/*/*_test.json
 var FS embed.FS

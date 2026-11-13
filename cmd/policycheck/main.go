@@ -35,6 +35,7 @@ func main() {
 			return
 		}
 		fmt.Fprintf(os.Stderr, "usage: policycheck [policies-dir]    (reads a hook JSON from stdin; uses the built-in policies when no directory is given)\n")
+		fmt.Fprintf(os.Stderr, "       policycheck test [policies-dir]    (run the *_test.json fixtures next to the policies)\n")
 		fmt.Fprintf(os.Stderr, "       policycheck ignore <policy-id> [--reason <reason>] [--path <dir>] [--expires <date>]\n")
 		fmt.Fprintf(os.Stderr, "       policycheck list-ignores\n")
 		fmt.Fprintf(os.Stderr, "       policycheck unignore <policy-id>\n")
@@ -44,6 +45,8 @@ func main() {
 	switch os.Args[1] {
 	case "--version", "-version", "version":
 		fmt.Printf("policycheck %s\n", versionString())
+	case "test":
+		cmdTest(os.Args[2:])
 	case "ignore":
 		cmdIgnore()
 	case "list-ignores":

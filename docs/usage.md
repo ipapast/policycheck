@@ -11,7 +11,7 @@ git clone https://github.com/ipapast/policycheck.git
 policycheck /path/to/policycheck/policies
 ```
 
-A directory replaces the built-in set entirely (it is not merged), so start from a copy of `policies/` and edit it. Policies are embedded from `policies/` at build time, so changes to the repo only reach the built-in set after you rebuild or reinstall.
+A directory replaces the built-in set entirely (it is not merged), so start from a copy of `policies/` and edit it. After editing, run `policycheck test /path/to/policies` to check the rules against their `*_test.json` fixtures. Policies are embedded from `policies/` at build time, so changes to the repo only reach the built-in set after you rebuild or reinstall.
 
 ## Ignoring policies
 

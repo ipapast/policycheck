@@ -9,13 +9,6 @@ import (
 	"github.com/cedar-policy/cedar-go"
 )
 
-type testCase struct {
-	Name      string         `json:"name"`
-	ToolName  string         `json:"tool_name"`
-	ToolInput map[string]any `json:"tool_input"`
-	Expect    string         `json:"expect"` // "allow" or "block"
-}
-
 func TestPolicies(t *testing.T) {
 	ps := cedar.NewPolicySet()
 	var testFiles []string
@@ -54,19 +47,8 @@ func TestPolicies(t *testing.T) {
 
 		for _, tc := range cases {
 			t.Run(tc.Name, func(t *testing.T) {
-				var in toolInput
-				raw, _ := json.Marshal(tc.ToolInput)
-				if err := json.Unmarshal(raw, &in); err != nil {
-					t.Fatalf("bad tool_input: %v", err)
-				}
-
-				violations := evaluate(ps, tc.ToolName, in)
-
-				if tc.Expect == "block" && len(violations) == 0 {
-					t.Errorf("expected block, got allow")
-				}
-				if tc.Expect == "allow" && len(violations) > 0 {
-					t.Errorf("expected allow, got block")
+				if err := checkCase(ps, tc); err != nil {
+					t.Error(err)
 				}
 			})
 		}
