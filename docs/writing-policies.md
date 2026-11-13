@@ -54,7 +54,7 @@ when { context.command like "gh repo delete*" };
 
 If a call matches both an `ask` rule and a normal one, it is blocked. Ignores work the same for both kinds. The audit log records `"decision":"ask"`.
 
-This relies on Claude Code's hook output (`permissionDecision: "ask"`). If an agent does not understand that output, the call simply runs, so use `ask` only for agents you have checked, and keep `forbid` for anything that must never happen. Fixtures in `*_test.json` only check allow or block, so a call that matches an `ask` rule counts as "block" there.
+Asking only works in Claude Code, which understands the hook output (`permissionDecision: "ask"`). `policycheck` detects it from the `CLAUDECODE` or `CLAUDE_PROJECT_DIR` environment variables. In any other agent, such as Codex, an `ask` rule blocks the call and says why, so it never silently allows. If the detection is wrong for your setup, set `POLICYCHECK_ASK=on` or `POLICYCHECK_ASK=off`. Fixtures in `*_test.json` only check allow or block, so a call that matches an `ask` rule counts as "block" there.
 
 ## Testing policies
 

@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -32,7 +33,12 @@ func runHook(t *testing.T, bin, policies, workdir, command string, env ...string
 	in, _ := json.Marshal(map[string]any{"tool_name": "Bash", "tool_input": map[string]string{"command": command}})
 	cmd := exec.Command(bin, policies)
 	cmd.Dir = workdir
-	cmd.Env = append(cmd.Environ(), env...)
+	for _, kv := range os.Environ() {
+		if !strings.HasPrefix(kv, "CLAUDE") && !strings.HasPrefix(kv, "POLICYCHECK_ASK") {
+			cmd.Env = append(cmd.Env, kv)
+		}
+	}
+	cmd.Env = append(cmd.Env, env...)
 	cmd.Stdin = bytes.NewReader(in)
 	var out, errb bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &out, &errb
@@ -46,6 +52,8 @@ func runHook(t *testing.T, bin, policies, workdir, command string, env ...string
 	return hookRun{out.String(), errb.String(), code}
 }
 
+const claudeEnv = "CLAUDE_PROJECT_DIR=/work"
+
 func askPolicyDir(t *testing.T, extra ...string) string {
 	dir := newPolicyDir(t, "")
 	writeFile(t, filepath.Join(dir, "ASK-001.cedar"), askPolicy)
@@ -58,7 +66,7 @@ func askPolicyDir(t *testing.T, extra ...string) string {
 func TestAskDecisionPromptsInsteadOfBlocking(t *testing.T) {
 	bin := buildBinary(t)
 	policies := askPolicyDir(t)
-	res := runHook(t, bin, policies, t.TempDir(), "gh repo delete foo")
+	res := runHook(t, bin, policies, t.TempDir(), "gh repo delete foo", claudeEnv)
 	if res.code != 0 {
 		t.Fatalf("exit = %d, want 0\nstderr: %s", res.code, res.stderr)
 	}
@@ -82,7 +90,7 @@ func TestAskDecisionPromptsInsteadOfBlocking(t *testing.T) {
 
 func TestAskDecisionAllowsUnmatchedCallsSilently(t *testing.T) {
 	bin := buildBinary(t)
-	res := runHook(t, bin, askPolicyDir(t), t.TempDir(), "ls")
+	res := runHook(t, bin, askPolicyDir(t), t.TempDir(), "ls", claudeEnv)
 	if res.code != 0 || res.stdout != "" {
 		t.Errorf("exit = %d, stdout = %q; want 0 and empty", res.code, res.stdout)
 	}
@@ -91,7 +99,7 @@ func TestAskDecisionAllowsUnmatchedCallsSilently(t *testing.T) {
 func TestDenyWinsOverAsk(t *testing.T) {
 	bin := buildBinary(t)
 	policies := askPolicyDir(t, denyPolicy)
-	res := runHook(t, bin, policies, t.TempDir(), "gh repo delete foo")
+	res := runHook(t, bin, policies, t.TempDir(), "gh repo delete foo", claudeEnv)
 	if res.code != 2 {
 		t.Fatalf("exit = %d, want 2\nstdout: %s", res.code, res.stdout)
 	}
@@ -112,7 +120,7 @@ func TestIgnoredAskPolicyDoesNotPrompt(t *testing.T) {
 	if out, err := ign.CombinedOutput(); err != nil {
 		t.Fatalf("ignore: %v\n%s", err, out)
 	}
-	res := runHook(t, bin, policies, work, "gh repo delete foo")
+	res := runHook(t, bin, policies, work, "gh repo delete foo", claudeEnv)
 	if res.code != 0 || res.stdout != "" {
 		t.Errorf("exit = %d, stdout = %q; want 0 and empty", res.code, res.stdout)
 	}
@@ -121,9 +129,37 @@ func TestIgnoredAskPolicyDoesNotPrompt(t *testing.T) {
 func TestAskDecisionIsAudited(t *testing.T) {
 	bin := buildBinary(t)
 	logPath := filepath.Join(t.TempDir(), "audit.jsonl")
-	runHook(t, bin, askPolicyDir(t), t.TempDir(), "gh repo delete foo", "POLICYCHECK_AUDIT_LOG="+logPath)
+	runHook(t, bin, askPolicyDir(t), t.TempDir(), "gh repo delete foo", claudeEnv, "POLICYCHECK_AUDIT_LOG="+logPath)
 	entries := readAudit(t, logPath)
 	if len(entries) != 1 || entries[0]["decision"] != "ask" {
 		t.Fatalf("want one audit entry with decision ask, got %v", entries)
+	}
+}
+
+func TestAskBlocksOutsideClaudeCode(t *testing.T) {
+	bin := buildBinary(t)
+	logPath := filepath.Join(t.TempDir(), "audit.jsonl")
+	res := runHook(t, bin, askPolicyDir(t), t.TempDir(), "gh repo delete foo", "POLICYCHECK_AUDIT_LOG="+logPath)
+	if res.code != 2 || res.stdout != "" {
+		t.Fatalf("exit = %d, stdout = %q; want 2 and empty", res.code, res.stdout)
+	}
+	if !strings.Contains(res.stderr, "ASK-001") || !strings.Contains(res.stderr, "Claude Code") {
+		t.Errorf("stderr should name the rule and say ask needs Claude Code: %s", res.stderr)
+	}
+	if entries := readAudit(t, logPath); len(entries) != 1 || entries[0]["decision"] != "block" {
+		t.Errorf("want one audit entry with decision block, got %v", entries)
+	}
+}
+
+func TestAskOverrideEnvironmentVariable(t *testing.T) {
+	bin := buildBinary(t)
+	policies := askPolicyDir(t)
+	off := runHook(t, bin, policies, t.TempDir(), "gh repo delete foo", claudeEnv, "POLICYCHECK_ASK=off")
+	if off.code != 2 {
+		t.Errorf("POLICYCHECK_ASK=off under Claude: exit = %d, want 2", off.code)
+	}
+	on := runHook(t, bin, policies, t.TempDir(), "gh repo delete foo", "POLICYCHECK_ASK=on")
+	if on.code != 0 || !strings.Contains(on.stdout, `"permissionDecision":"ask"`) {
+		t.Errorf("POLICYCHECK_ASK=on outside Claude: exit = %d, stdout = %q", on.code, on.stdout)
 	}
 }

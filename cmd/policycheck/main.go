@@ -338,6 +338,7 @@ func cmdEvaluate(policiesDir string) {
 		ignores = patchIgnores(hook.Cwd, ignores)
 	}
 
+	canAsk := askSupported()
 	var blocked, asked []violation
 	for i, v := range violations {
 		ignoreInput := hook.ToolInput
@@ -351,16 +352,21 @@ func cmdEvaluate(policiesDir string) {
 			fmt.Fprintf(os.Stderr, "IGNORED [%s]: %s (reason: %s, expires: %s)\n", v.ID, v.Msg, ign.Reason, ign.Expires)
 			continue
 		}
-		if policyAnnotation(ps, v.ID, "decision") == "ask" {
+		wantsAsk := policyAnnotation(ps, v.ID, "decision") == "ask"
+		if wantsAsk && canAsk {
 			violations[i].Decision = "ask"
 			asked = append(asked, violations[i])
 			continue
 		}
 		blocked = append(blocked, v)
+		note := ""
+		if wantsAsk {
+			note = " (this rule asks for approval, which needs Claude Code, so the call is blocked)"
+		}
 		if v.Msg != "" {
-			fmt.Fprintf(os.Stderr, "BLOCKED [%s]: %s\n", v.ID, v.Msg)
+			fmt.Fprintf(os.Stderr, "BLOCKED [%s]: %s%s\n", v.ID, v.Msg, note)
 		} else {
-			fmt.Fprintf(os.Stderr, "BLOCKED [%s]\n", v.ID)
+			fmt.Fprintf(os.Stderr, "BLOCKED [%s]%s\n", v.ID, note)
 		}
 	}
 
@@ -378,6 +384,19 @@ func cmdEvaluate(policiesDir string) {
 	case "ask":
 		writeAskDecision(asked)
 	}
+}
+
+// askSupported reports whether the agent running the hook understands the
+// "ask" decision. Only Claude Code does; elsewhere ask rules block instead.
+// POLICYCHECK_ASK=on or off overrides the detection.
+func askSupported() bool {
+	switch os.Getenv("POLICYCHECK_ASK") {
+	case "on":
+		return true
+	case "off":
+		return false
+	}
+	return os.Getenv("CLAUDECODE") != "" || os.Getenv("CLAUDE_PROJECT_DIR") != ""
 }
 
 // writeAskDecision tells Claude Code to prompt the user instead of running or
