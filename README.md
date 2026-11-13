@@ -16,6 +16,19 @@ flowchart TD
 
 The rules cover Claude Code's shell, file, search and fetch tools, and have also been tested with Codex CLI shell commands and native `apply_patch` edits. For a patch, every affected file is checked before any changes are made. MCP rules depend on the tool names and hook configuration; the [agent guide](docs/agents.md) describes the tested coverage.
 
+## Why
+
+Coding agents run shell commands and edit files on your behalf, usually with your credentials. Most of the time that is fine. The risk is the occasional bad call: a cleanup that deletes too much, a command that reads `~/.aws/credentials` "to debug", or a prompt injection hidden in a README or web page the agent was asked to read. The agent has the tools, so it just does it.
+
+Claude Code and Codex have their own permission systems, and you should use them. `policycheck` is an extra layer that adds a few things they don't give you on their own:
+
+- **Rules you can read.** Each rule is a small Cedar file with an ID and a plain explanation, so a block tells you exactly which rule fired and why, instead of a generic denial.
+- **Rules you can test.** Every policy ships with test cases, so changing one doesn't quietly break another.
+- **Exceptions that expire.** If a rule is in your way on one project, you can ignore it for that path with an end date, instead of turning the whole thing off.
+- **A record.** An optional audit log shows which rules matched and which were overridden.
+
+It is a guardrail, not a sandbox. The rules match on what the agent sends, so a determined agent can get around them. It catches mistakes and obvious bad behavior, and it works best next to real isolation like containers and least-privilege credentials. See [SECURITY.md](SECURITY.md).
+
 ## What it checks
 
 The included policies cover operations that are easy to get wrong during coding, whether through a mistake or a prompt injection in a file the agent reads:
