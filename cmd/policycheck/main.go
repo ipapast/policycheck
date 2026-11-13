@@ -388,7 +388,9 @@ func cmdEvaluate(policiesDir string) {
 
 // askSupported reports whether the agent running the hook understands the
 // "ask" decision. Only Claude Code does; elsewhere ask rules block instead.
-// POLICYCHECK_ASK=on or off overrides the detection.
+// Claude Code exports CLAUDE_PROJECT_DIR to its hook processes. CLAUDECODE is
+// not used because Claude's shell tool sets it, so an agent started from that
+// shell would inherit it. POLICYCHECK_ASK=on or off overrides the detection.
 func askSupported() bool {
 	switch os.Getenv("POLICYCHECK_ASK") {
 	case "on":
@@ -396,7 +398,7 @@ func askSupported() bool {
 	case "off":
 		return false
 	}
-	return os.Getenv("CLAUDECODE") != "" || os.Getenv("CLAUDE_PROJECT_DIR") != ""
+	return os.Getenv("CLAUDE_PROJECT_DIR") != ""
 }
 
 // writeAskDecision tells Claude Code to prompt the user instead of running or

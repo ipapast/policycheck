@@ -163,3 +163,11 @@ func TestAskOverrideEnvironmentVariable(t *testing.T) {
 		t.Errorf("POLICYCHECK_ASK=on outside Claude: exit = %d, stdout = %q", on.code, on.stdout)
 	}
 }
+
+func TestInheritedClaudeCodeVariableDoesNotEnableAsk(t *testing.T) {
+	bin := buildBinary(t)
+	res := runHook(t, bin, askPolicyDir(t), t.TempDir(), "gh repo delete foo", "CLAUDECODE=1")
+	if res.code != 2 || res.stdout != "" {
+		t.Errorf("exit = %d, stdout = %q; want 2 and empty (CLAUDECODE leaks into agents started from Claude's shell)", res.code, res.stdout)
+	}
+}
