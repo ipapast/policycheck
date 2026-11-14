@@ -60,6 +60,28 @@ export PATH=$PATH:$(go env GOPATH)/bin
 
 Or download a prebuilt binary for Linux or macOS (amd64 or arm64) from the [Releases page](https://github.com/ipapast/policycheck/releases), make it executable, and put it on your `PATH`.
 
+Or build from a clone (needs Go 1.24 or later):
+
+```bash
+git clone https://github.com/ipapast/policycheck.git
+cd policycheck
+go build -o policycheck ./cmd/policycheck
+./policycheck test
+```
+
+`go build` writes the `policycheck` binary into the current directory, so run it as `./policycheck` or move it onto your `PATH`. `policycheck test` runs every rule's test cases and should end with `0 failed`.
+
+### Check that it works
+
+Before you wire it into an agent, confirm the binary runs and blocks something:
+
+```bash
+policycheck --version
+echo '{"tool_name":"Bash","tool_input":{"command":"rm -rf /"}}' | policycheck; echo "exit=$?"
+```
+
+The second command should print `BLOCKED [CMD-001]: ...` and `exit=2`. If you get "command not found", your Go binary directory is not on `PATH` (see above).
+
 ### Claude Code
 
 Add the hook to your project's `.claude/settings.json`:
