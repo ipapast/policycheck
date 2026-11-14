@@ -148,7 +148,7 @@ The [agent guide](docs/agents.md) covers test results, MCP configuration and cov
 | `TOOL-012` | cdk deploy/destroy |
 | `TOOL-013` | destructive psql commands (DROP, TRUNCATE) |
 
-The `examples/` directory contains policies that need project-specific values before use. For example, `TOOL-008` restricts `git push` to a GitHub account; set the account name and include the file in your custom policy directory to enable it. `TOOL-009-ask` is an opt-in variant of `TOOL-009` that asks for approval in Claude Code instead of blocking pushes to main.
+The `examples/` directory contains policies that need project-specific values before use. For example, `TOOL-008` restricts `git push` to a GitHub account; set the account name and include the file in your custom policy directory to enable it. `TOOL-009-ask` is an opt-in variant of `TOOL-009` that asks for approval in Claude Code instead of blocking pushes to main. The examples have no permit policy of their own, so run `policycheck test` on a directory that also contains `policies/base.cedar`.
 
 </details>
 

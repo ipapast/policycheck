@@ -76,6 +76,15 @@ func runFixtures(fsys fs.FS, root string, ps *cedar.PolicySet) (files, passed in
 	return files, passed, problems
 }
 
+func hasPermitPolicy(ps *cedar.PolicySet) bool {
+	for _, p := range ps.All() {
+		if p.Effect() == cedar.Permit {
+			return true
+		}
+	}
+	return false
+}
+
 // cmdTest runs the *_test.json fixtures that sit next to the policies and
 // exits 1 if any case fails. With no directory it tests the built-in policies.
 func cmdTest(args []string) {
@@ -98,6 +107,10 @@ func cmdTest(args []string) {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "policycheck test: %v\n", err)
 		os.Exit(1)
+	}
+
+	if !hasPermitPolicy(ps) {
+		fmt.Fprintf(os.Stderr, "warning: no permit policy found in %s. Cedar denies everything that no permit policy allows, so every \"allow\" case will fail. Add a permit policy such as policies/base.cedar.\n", label)
 	}
 
 	files, passed, problems := runFixtures(fsys, root, ps)
