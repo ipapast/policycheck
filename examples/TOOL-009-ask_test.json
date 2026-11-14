@@ -1,0 +1,20 @@
+[
+  {
+    "name": "asks before pushing to main",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git push origin main"},
+    "expect": "block"
+  },
+  {
+    "name": "asks before pushing to master",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git push origin master"},
+    "expect": "block"
+  },
+  {
+    "name": "allows pushing a feature branch",
+    "tool_name": "Bash",
+    "tool_input": {"command": "git push origin feature"},
+    "expect": "allow"
+  }
+]

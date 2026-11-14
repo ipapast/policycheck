@@ -105,3 +105,26 @@ func TestTestCmdFailsWithoutFixtures(t *testing.T) {
 		t.Errorf("exit = %d, want 1 when no *_test.json files exist\n%s", code, out)
 	}
 }
+
+func TestTestCmdWarnsWhenNoPermitPolicy(t *testing.T) {
+	bin := buildBinary(t)
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, "X-001.cedar"), noRmPolicy)
+	writeFile(t, filepath.Join(dir, "X-001_test.json"), `[
+  {"name": "allows ls", "tool_name": "Bash", "tool_input": {"command": "ls"}, "expect": "allow"}
+]`)
+	out, code := runTestCmd(t, bin, dir)
+	if code != 1 {
+		t.Errorf("exit = %d, want 1\n%s", code, out)
+	}
+	if !strings.Contains(out, "no permit policy") || !strings.Contains(out, "base.cedar") {
+		t.Errorf("missing the no-permit warning:\n%s", out)
+	}
+
+	withPermit := newPolicyDir(t, `[
+  {"name": "allows ls", "tool_name": "Bash", "tool_input": {"command": "ls"}, "expect": "allow"}
+]`)
+	if out, _ := runTestCmd(t, bin, withPermit); strings.Contains(out, "no permit policy") {
+		t.Errorf("unexpected warning when a permit policy exists:\n%s", out)
+	}
+}

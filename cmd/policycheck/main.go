@@ -338,7 +338,8 @@ func cmdEvaluate(policiesDir string) {
 		ignores = patchIgnores(hook.Cwd, ignores)
 	}
 
-	blocked := false
+	canAsk := askSupported()
+	var blocked, asked []violation
 	for i, v := range violations {
 		ignoreInput := hook.ToolInput
 		if v.FilePath != "" {
@@ -351,15 +352,73 @@ func cmdEvaluate(policiesDir string) {
 			fmt.Fprintf(os.Stderr, "IGNORED [%s]: %s (reason: %s, expires: %s)\n", v.ID, v.Msg, ign.Reason, ign.Expires)
 			continue
 		}
-		blocked = true
+		wantsAsk := policyAnnotation(ps, v.ID, "decision") == "ask"
+		if wantsAsk && canAsk {
+			violations[i].Decision = "ask"
+			asked = append(asked, violations[i])
+			continue
+		}
+		blocked = append(blocked, v)
+		note := ""
+		if wantsAsk {
+			note = " (this rule asks for approval, which needs Claude Code, so the call is blocked)"
+		}
 		if v.Msg != "" {
-			fmt.Fprintf(os.Stderr, "BLOCKED [%s]: %s\n", v.ID, v.Msg)
+			fmt.Fprintf(os.Stderr, "BLOCKED [%s]: %s%s\n", v.ID, v.Msg, note)
 		} else {
-			fmt.Fprintf(os.Stderr, "BLOCKED [%s]\n", v.ID)
+			fmt.Fprintf(os.Stderr, "BLOCKED [%s]%s\n", v.ID, note)
 		}
 	}
-	writeAudit(hook.ToolName, hook.ToolInput, violations, blocked)
-	if blocked {
+
+	decision := "allow"
+	switch {
+	case len(blocked) > 0:
+		decision = "block"
+	case len(asked) > 0:
+		decision = "ask"
+	}
+	writeAudit(hook.ToolName, hook.ToolInput, violations, decision)
+	switch decision {
+	case "block":
+		os.Exit(2)
+	case "ask":
+		writeAskDecision(asked)
+	}
+}
+
+// askSupported reports whether the agent running the hook understands the
+// "ask" decision. Only Claude Code does; elsewhere ask rules block instead.
+// Claude Code exports CLAUDE_PROJECT_DIR to its hook processes. CLAUDECODE is
+// not used because Claude's shell tool sets it, so an agent started from that
+// shell would inherit it. POLICYCHECK_ASK=on or off overrides the detection.
+func askSupported() bool {
+	switch os.Getenv("POLICYCHECK_ASK") {
+	case "on":
+		return true
+	case "off":
+		return false
+	}
+	return os.Getenv("CLAUDE_PROJECT_DIR") != ""
+}
+
+// writeAskDecision tells Claude Code to prompt the user instead of running or
+// blocking the call. Rules marked @decision("ask") use this.
+func writeAskDecision(asked []violation) {
+	reasons := make([]string, 0, len(asked))
+	for _, v := range asked {
+		if v.Msg != "" {
+			reasons = append(reasons, fmt.Sprintf("[%s] %s", v.ID, v.Msg))
+		} else {
+			reasons = append(reasons, fmt.Sprintf("[%s]", v.ID))
+		}
+	}
+	out := map[string]any{"hookSpecificOutput": map[string]string{
+		"hookEventName":            "PreToolUse",
+		"permissionDecision":       "ask",
+		"permissionDecisionReason": "policycheck: " + strings.Join(reasons, "; "),
+	}}
+	if err := json.NewEncoder(os.Stdout).Encode(out); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to write hook decision: %v\n", err)
 		os.Exit(2)
 	}
 }

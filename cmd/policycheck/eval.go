@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/cedar-policy/cedar-go"
+	"github.com/cedar-policy/cedar-go/types"
 )
 
 type toolInput struct {
@@ -21,6 +22,7 @@ type violation struct {
 	ID       string `json:"id"`
 	Msg      string `json:"msg,omitempty"`
 	Ignored  bool   `json:"ignored,omitempty"`
+	Decision string `json:"decision,omitempty"`
 	FilePath string `json:"file_path,omitempty"`
 }
 
@@ -273,12 +275,16 @@ func evaluate(ps *cedar.PolicySet, toolName string, in toolInput) []violation {
 }
 
 func policyMessage(ps *cedar.PolicySet, id string) string {
+	return policyAnnotation(ps, id, "msg")
+}
+
+func policyAnnotation(ps *cedar.PolicySet, id, key string) string {
 	for pid, p := range ps.All() {
 		if string(pid) != id {
 			continue
 		}
 		if ann := p.Annotations(); ann != nil {
-			if v, ok := ann["msg"]; ok {
+			if v, ok := ann[types.Ident(key)]; ok {
 				return string(v)
 			}
 		}

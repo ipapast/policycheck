@@ -14,6 +14,10 @@ Tested with Codex CLI **0.167.0 on macOS**:
 - Seven MCP calls against local test doubles verified both permitted reads and all five prohibited Slack operations. Only the two reads reached the mock servers; no real Slack connection was used.
 - With `POLICYCHECK_AUDIT_LOG` set for the hook, blocked shell, patch and MCP calls were recorded in the built-in JSONL [audit log](usage.md#audit-log). Ignored violations were logged as allowed, and patch violations included their affected paths. Harmless calls were not logged, as designed.
 
+### Rules that ask
+
+Rules marked `@decision("ask")` block in Codex. Codex hooks do not support the `ask` decision (it reports a hook error and continues the tool call), and a PermissionRequest hook only runs when Codex already requires approval, so it cannot force a prompt. Do not set `POLICYCHECK_ASK=on` for Codex. See [Asking instead of blocking](writing-policies.md#asking-instead-of-blocking).
+
 ### File edits
 
 Codex sends native `apply_patch` text in `tool_input.command`. The adapter extracts every Add, Update and Delete path, plus both the source and destination of a Move. It checks each target against **both `Write` and `Edit` policies**. Any non-ignored violation blocks the entire patch before Codex changes files, including any otherwise allowed files in the same patch.
