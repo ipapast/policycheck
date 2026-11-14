@@ -171,3 +171,27 @@ func TestInheritedClaudeCodeVariableDoesNotEnableAsk(t *testing.T) {
 		t.Errorf("exit = %d, stdout = %q; want 2 and empty (CLAUDECODE leaks into agents started from Claude's shell)", res.code, res.stdout)
 	}
 }
+
+func TestAskExamplePolicyPromptsForPushToMain(t *testing.T) {
+	bin := buildBinary(t)
+	example, err := os.ReadFile("../../examples/TOOL-009-ask.cedar")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, "base.cedar"), permitAll)
+	writeFile(t, filepath.Join(dir, "TOOL-009-ask.cedar"), string(example))
+
+	for _, cmd := range []string{"git push origin main", "git push origin master"} {
+		res := runHook(t, bin, dir, t.TempDir(), cmd, claudeEnv)
+		if res.code != 0 || !strings.Contains(res.stdout, `"permissionDecision":"ask"`) {
+			t.Errorf("%q: exit = %d, stdout = %q; want an ask decision", cmd, res.code, res.stdout)
+		}
+	}
+	for _, cmd := range []string{"git push origin feature", "git status"} {
+		res := runHook(t, bin, dir, t.TempDir(), cmd, claudeEnv)
+		if res.code != 0 || res.stdout != "" {
+			t.Errorf("%q: exit = %d, stdout = %q; want a silent allow", cmd, res.code, res.stdout)
+		}
+	}
+}
