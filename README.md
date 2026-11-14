@@ -84,7 +84,7 @@ The second command should print `BLOCKED [CMD-001]: ...` and `exit=2`. If you ge
 
 ### Claude Code
 
-Add the hook to your project's `.claude/settings.json`:
+Run `policycheck init claude` in your project to add the hook to `.claude/settings.json` (add `--user` to use `~/.claude/settings.json` for all projects, or `--dry-run` to preview). It keeps everything else in the file and is safe to run twice. Or add it by hand:
 
 ```json
 {
@@ -108,7 +108,7 @@ If `policycheck` cannot load its policies or parse the hook input, it returns ex
 
 ### Codex
 
-Add this to `~/.codex/hooks.json` for all projects, or `<repo>/.codex/hooks.json` for one project:
+Run `policycheck init codex` to add the hook for the current project (`--user` for `~/.codex/hooks.json`). Or add this to `~/.codex/hooks.json` for all projects, or `<repo>/.codex/hooks.json` for one project:
 
 ```json
 {
@@ -133,6 +133,8 @@ If `policycheck` is not on Codex's PATH, use its absolute path in `command`, for
 The [agent guide](docs/agents.md) covers test results, MCP configuration and coverage limits. There are also instructions for [dev containers](docs/dev-containers.md), [custom policies](docs/usage.md#custom-policies), [temporary exceptions](docs/usage.md#ignoring-policies) and [audit logging](docs/usage.md#audit-log).
 
 ## Included policies
+
+Run `policycheck explain` to list the rules, or `policycheck explain CMD-001` to see one rule's source and test cases.
 
 <details>
 <summary>All 30 policies</summary>

@@ -36,6 +36,8 @@ func main() {
 		}
 		fmt.Fprintf(os.Stderr, "usage: policycheck [policies-dir]    (reads a hook JSON from stdin; uses the built-in policies when no directory is given)\n")
 		fmt.Fprintf(os.Stderr, "       policycheck test [policies-dir]    (run the *_test.json fixtures next to the policies)\n")
+		fmt.Fprintf(os.Stderr, "       policycheck explain [policy-id] [policies-dir]    (show what a rule does; no ID lists them all)\n")
+		fmt.Fprintf(os.Stderr, "       policycheck init claude|codex [--user] [--dry-run]    (add the hook to the agent's settings)\n")
 		fmt.Fprintf(os.Stderr, "       policycheck ignore <policy-id> [--reason <reason>] [--path <dir>] [--expires <date>]\n")
 		fmt.Fprintf(os.Stderr, "       policycheck list-ignores\n")
 		fmt.Fprintf(os.Stderr, "       policycheck unignore <policy-id>\n")
@@ -47,6 +49,10 @@ func main() {
 		fmt.Printf("policycheck %s\n", versionString())
 	case "test":
 		cmdTest(os.Args[2:])
+	case "explain":
+		cmdExplain(os.Args[2:])
+	case "init":
+		cmdInit(os.Args[2:])
 	case "ignore":
 		cmdIgnore()
 	case "list-ignores":

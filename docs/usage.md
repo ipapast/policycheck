@@ -13,6 +13,14 @@ policycheck /path/to/policycheck/policies
 
 A directory replaces the built-in set entirely (it is not merged), so start from a copy of `policies/` and edit it. After editing, run `policycheck test /path/to/policies` to check the rules against their `*_test.json` fixtures. Policies are embedded from `policies/` at build time, so changes to the repo only reach the built-in set after you rebuild or reinstall.
 
+## Looking at rules
+
+`policycheck explain` lists every built-in rule with its decision and message. `policycheck explain CMD-001` shows one rule's message, Cedar source and test cases, plus its variants (`DATA-002` also shows `DATA-002b`). Add a directory to read your own policies: `policycheck explain MY-001 ./my-policies`.
+
+## Setting up the hook
+
+`policycheck init claude` or `policycheck init codex` adds the hook to the agent's settings. By default it edits the current project (`.claude/settings.json` or `.codex/hooks.json`); `--user` edits the file in your home directory, and `--dry-run` prints the result without writing. Existing settings and hooks are kept, a second run changes nothing, and a file that is not valid JSON is left alone. The hook command is `policycheck` if that name on your `PATH` is this binary, otherwise the binary's absolute path.
+
 ## Ignoring policies
 
 You can temporarily suppress a policy per project. Default expiry is 1 week.
